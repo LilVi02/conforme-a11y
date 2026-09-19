@@ -1,0 +1,3 @@
+https://www.example.it
+https://www.example.it/contatti
+# le righe con # sono ignorate

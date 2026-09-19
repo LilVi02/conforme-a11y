@@ -1,0 +1,39 @@
+{
+  "name": "conforme",
+  "version": "0.1.0",
+  "description": "Scanner di accessibilità web che collega le violazioni WCAG 2.1 AA al contesto normativo italiano (EAA / D.Lgs. 82-2022 / Legge Stanca) e genera report e bozza di Dichiarazione di Accessibilità.",
+  "type": "module",
+  "bin": {
+    "conforme": "./src/cli.js"
+  },
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js",
+    "test": "node test/test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "accessibilita",
+    "accessibility",
+    "wcag",
+    "eaa",
+    "agid",
+    "a11y",
+    "italia"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "axe-core": "^4.10.0",
+    "playwright": "^1.49.1"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ]
+}
