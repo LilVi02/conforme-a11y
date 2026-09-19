@@ -270,7 +270,7 @@ export const CRITERI = {
     titolo: 'Nessun impedimento all\'uso della tastiera',
     livello: 'A',
     principio: 2,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Il focus resta intrappolato in un componente — di solito una finestra modale o un player — e non si esce più dalla pagina se non ricaricandola.',
     correzione:
@@ -345,7 +345,7 @@ export const CRITERI = {
     titolo: 'Ordine del focus',
     livello: 'A',
     principio: 2,
-    auto: 'no',
+    auto: 'parziale',
     impatto: 'Il focus salta in punti imprevedibili e la navigazione perde ogni logica.',
     correzione:
       'L\'ordine del DOM corrisponde all\'ordine visivo. Non usare tabindex con valori positivi. Attenzione agli spostamenti fatti in CSS.',

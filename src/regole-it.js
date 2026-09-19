@@ -17,6 +17,28 @@
  */
 
 export const REGOLE = {
+  // ── Controlli eseguiti pilotando il browser, non da axe.
+  // Nascono dal fatto che axe analizza il DOM da fermo e non può premere Tab.
+  'tastiera-trappola': {
+    descrizione: 'Il focus resta bloccato e non avanza',
+    correzione:
+      'Qualcosa intercetta il tasto Tab e riporta il focus dov\'era. Di solito è un gestore di eventi con preventDefault() su keydown, oppure una finestra modale che cicla il focus senza offrire una via d\'uscita. Ogni componente che trattiene il focus deve poter essere chiuso con Esc e restituire il focus a chi l\'ha aperto.',
+  },
+  'tastiera-irraggiungibile': {
+    descrizione: 'Elementi interattivi non raggiungibili da tastiera',
+    correzione:
+      'L\'elemento risponde al clic ma non compare nell\'ordine di tabulazione: quasi sempre è un <div> o uno <span> con un gestore onclick. Sostituiscilo con <button> o <a>, che sono raggiungibili da soli. Se devi tenere l\'elemento generico servono tabindex="0", un role adeguato e la gestione di Invio e Spazio in keydown.',
+  },
+  'tastiera-focus-invisibile': {
+    descrizione: 'Nessun indicatore visibile quando l\'elemento riceve il focus',
+    correzione:
+      'Quasi sempre è colpa di outline: none scritto per ragioni estetiche. Non rimuovere mai l\'outline senza sostituirlo: usa :focus-visible con un indicatore evidente e contrastato, per esempio outline: 3px solid con outline-offset: 2px.',
+  },
+  'tastiera-senza-salto-blocchi': {
+    descrizione: 'Nessun link per saltare direttamente al contenuto',
+    correzione:
+      'Inserisci come primo elemento del <body> un link che punti al contenuto: <a href="#main" class="salta">Vai al contenuto principale</a>, con <main id="main"> più avanti. Può restare fuori schermo finché non riceve il focus, ma non nascosto con display:none, che lo escluderebbe dalla tabulazione.',
+  },
   'area-alt': {
     descrizione: 'Aree delle mappe immagine senza testo alternativo',
     correzione: 'Ogni <area> dentro una <map> ha un attributo alt che ne descrive la destinazione.',

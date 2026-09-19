@@ -16,12 +16,12 @@ export const VERIFICHE_MANUALI = [
   {
     id: 'tastiera',
     criteri: ['2.1.1', '2.1.2', '2.4.3', '2.4.7', '2.1.4', '2.4.1'],
-    titolo: 'Navigare tutto il sito con la sola tastiera',
+    titolo: 'Completare i percorsi principali con la sola tastiera',
     come:
-      'Metti via il mouse. Con Tab, Shift+Tab, Invio, Spazio e frecce completa i percorsi principali: menu, ricerca, modulo di contatto, login, acquisto. Controlla quattro cose: di vedere sempre dove sei, di raggiungere ogni funzione, di non restare mai intrappolato, e che il primo Tab offra un link per saltare direttamente al contenuto.',
+      'Conforme ha già percorso la pagina con Tab e verificato che gli elementi interattivi ricevano il focus, che il focus non resti bloccato, che l\'indicatore sia visibile e che esista un link per saltare al contenuto: i risultati sono fra i problemi qui sopra. Resta da fare quello che una macchina non può giudicare. Metti via il mouse e completa per intero i percorsi che contano — ricerca, modulo di contatto, login, acquisto — usando Tab, Shift+Tab, Invio, Spazio ed Esc. Guarda se l\'indicatore di focus si vede davvero (esistere non basta: un bordo grigio su grigio supera il controllo automatico e non si nota), se l\'ordine in cui il focus si sposta segue la lettura della pagina, e se i menu a più livelli si aprono anche con le frecce.',
     seFallisce:
-      'È la verifica più importante di tutte. Se un percorso non si completa da tastiera, il sito non è conforme, qualunque cosa dica lo scanner.',
-    tempo: '30–45 min',
+      'Resta la verifica più importante di tutte. Se un percorso non si completa da tastiera il sito non è conforme, qualunque cosa dica lo scanner.',
+    tempo: '15–20 min',
   },
   {
     id: 'screen-reader',

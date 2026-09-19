@@ -12,6 +12,7 @@
 import { chromium } from 'playwright';
 import { AxeBuilder } from '@axe-core/playwright';
 import { normalizzaViolazioni, riepiloga } from './aggrega.js';
+import { verificaTastiera } from './tastiera.js';
 
 const TAG_WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
@@ -22,7 +23,7 @@ const TAG_WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
  * @param {{timeout?: number, attesa?: number}} opzioni
  */
 export async function scansionaPagina(browser, url, opzioni = {}) {
-  const { timeout = 30000, attesa = 1000 } = opzioni;
+  const { timeout = 30000, attesa = 1000, tastiera = true } = opzioni;
   const context = await browser.newContext();
   const page = await context.newPage();
 
@@ -47,13 +48,24 @@ export async function scansionaPagina(browser, url, opzioni = {}) {
     const risultati = await new AxeBuilder({ page }).withTags(TAG_WCAG_AA).analyze();
     const titolo = await page.title();
 
+    // La prova da tastiera va fatta dopo axe: preme davvero i tasti e sposta
+    // il focus, quindi altererebbe lo stato della pagina prima dell'analisi.
+    let daTastiera = { violazioni: [], statistiche: null };
+    if (tastiera) {
+      daTastiera = await verificaTastiera(page, opzioni).catch(() => ({
+        violazioni: [],
+        statistiche: null,
+      }));
+    }
+
     return {
       url,
       urlFinale: page.url(),
       stato: stato ?? null,
       titolo,
       lingua: await page.getAttribute('html', 'lang'),
-      violazioni: normalizzaViolazioni(risultati.violations),
+      violazioni: normalizzaViolazioni([...risultati.violations, ...daTastiera.violazioni]),
+      tastiera: daTastiera.statistiche,
       // axe segnala come "incomplete" i controlli che non è riuscito a
       // decidere da solo: tipicamente il contrasto su sfondi con immagini o
       // gradienti. Non sono violazioni accertate, ma nemmeno esiti puliti:

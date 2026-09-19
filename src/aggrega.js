@@ -109,6 +109,18 @@ export function riepiloga(pagine = []) {
   // scansione è avvenuta. Senza questo dato, "zero violazioni" e "lo scanner
   // non ha caricato la pagina" si leggono allo stesso modo.
   const controlliSuperati = pagine.reduce((n, p) => n + (p.superati || 0), 0);
+
+  // Riepilogo della prova da tastiera, che non passa da axe.
+  const conTastiera = pagine.filter((p) => p.tastiera);
+  const tastiera = conTastiera.length
+    ? {
+        pagine: conTastiera.length,
+        elementiPercorsi: conTastiera.reduce((n, p) => n + p.tastiera.elementiRaggiunti, 0),
+        focusControllati: conTastiera.reduce((n, p) => n + p.tastiera.focusControllati, 0),
+        trappole: conTastiera.filter((p) => p.tastiera.trappolaTrovata).length,
+        conSkipLink: conTastiera.filter((p) => p.tastiera.skipLink).length,
+      }
+    : null;
   const pagineAnalizzate = pagine.filter((p) => !p.errore);
 
   return {
@@ -117,6 +129,7 @@ export function riepiloga(pagine = []) {
     controlliSuperatiMin: pagineAnalizzate.length
       ? Math.min(...pagineAnalizzate.map((p) => p.superati || 0))
       : 0,
+    tastiera,
     pagineInErrore: pagine.filter((p) => p.errore).length,
     pagineSospette: pagine.filter((p) => p.sospetto).length,
     problemiDistinti: problemi.length,

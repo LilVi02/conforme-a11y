@@ -39,9 +39,17 @@ a[href$="municipio-8"]
 
 Quello riportato sopra è un caso reale: diciannove link ai Municipi sul sito del Comune di Milano, nessuno dei quali contiene un testo. Chi usa uno screen reader sente diciannove link identici e non può scegliere il proprio.
 
+## La prova da tastiera
+
+axe analizza il DOM da fermo e non può premere Tab: per questo tutti i criteri sulla tastiera finiscono di norma fra quelli da verificare a mano, e restano la barriera più bloccante e meno controllata del web.
+
+Conforme percorre la pagina premendo Tab davvero, e osserva quattro cose: che gli elementi interattivi visibili ricevano il focus, che il focus non resti bloccato, che dando il focus qualcosa cambi sullo schermo, che il primo Tab offra un link per saltare al contenuto.
+
+Il limite del metodo va detto: osserva fatti meccanici, non usabilità. Sa dire che un elemento riceve il focus, non che l'indicatore sia percepibile; sa dire che nessun elemento è irraggiungibile, non che il percorso di acquisto si completi. Sposta questi criteri da "non verificabile" a "parzialmente verificato".
+
 ## Quanto copre
 
-Dei 50 criteri WCAG 2.1 di livello A e AA, l'analisi automatica ne verifica pienamente 4, ne intercetta parzialmente 15 e sui restanti 31 non è in grado di pronunciarsi.
+Dei 50 criteri WCAG 2.1 di livello A e AA, l'analisi automatica ne verifica pienamente 4, ne intercetta parzialmente 17 e sui restanti 29 non è in grado di pronunciarsi.
 
 Un report privo di errori non attesta quindi la conformità, e il report stesso lo dichiara in apertura. Insieme ai problemi rilevati viene sempre prodotta la checklist delle 14 verifiche manuali che coprono i criteri restanti, con i tempi stimati.
 
@@ -118,6 +126,7 @@ const esito = { dataScansione: new Date().toISOString(), pagine, riepilogo: riep
 ```
 src/wcag-it.js       i 50 criteri: titolo ufficiale, impatto, correzione, automatizzabilità
 src/regole-it.js     le regole axe, con descrizione e correzione specifica
+src/tastiera.js      la prova da tastiera, pilotando il browser
 src/manuale.js       le 14 verifiche manuali, collegate ai criteri che coprono
 src/dichiarazione.js scheda preparatoria e distinzione fra i due regimi
 src/argomenti.js     argomenti da riga di comando
@@ -127,7 +136,7 @@ src/report.js        Markdown e JSON
 src/cli.js           entry point
 ```
 
-`scan.js` e `cli.js` sono gli unici moduli che importano Playwright. Il resto funziona senza browser, e un test lo verifica.
+`scan.js`, `tastiera.js` e `cli.js` sono gli unici moduli legati al browser. Il resto funziona senza browser, e un test lo verifica.
 
 ## Test
 
@@ -135,7 +144,7 @@ src/cli.js           entry point
 npm test
 ```
 
-53 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
+59 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
 
 ## Provenienza dei contenuti
 

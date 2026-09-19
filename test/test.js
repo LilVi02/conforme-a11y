@@ -465,6 +465,65 @@ test('un report senza violazioni mostra la prova che la scansione è avvenuta', 
   assert.match(md, /inattendibile/);
 });
 
+console.log('\nProva da tastiera');
+
+test('le regole della tastiera hanno descrizione e correzione', () => {
+  for (const r of ['tastiera-trappola','tastiera-irraggiungibile','tastiera-focus-invisibile','tastiera-senza-salto-blocchi']) {
+    assert.ok(REGOLE[r], r + ' non è definita');
+    assert.ok(REGOLE[r].correzione.length > 60, r + ': correzione troppo vaga');
+  }
+});
+
+test('le violazioni da tastiera si agganciano ai criteri WCAG giusti', () => {
+  // Le produce tastiera.js con la forma di axe, così attraversano la stessa
+  // pipeline: se i tag fossero sbagliati finirebbero senza criterio.
+  const casi = [
+    { id:'tastiera-irraggiungibile', tags:['wcag2a','wcag211'], atteso:'2.1.1' },
+    { id:'tastiera-trappola',        tags:['wcag2a','wcag212'], atteso:'2.1.2' },
+    { id:'tastiera-focus-invisibile',tags:['wcag2aa','wcag247'], atteso:'2.4.7' },
+    { id:'tastiera-senza-salto-blocchi', tags:['wcag2a','wcag241'], atteso:'2.4.1' },
+  ];
+  for (const c of casi) {
+    const [v] = normalizzaViolazioni([{ id:c.id, help:'x', tags:c.tags, nodes:[{target:['x'],html:'<x>'}] }]);
+    assert.equal(v.criteri[0].codice, c.atteso, c.id + ' mappa sul criterio sbagliato');
+    assert.ok(v.criteri[0].titolo, c.id + ' non trova la scheda del criterio');
+  }
+});
+
+test('i criteri sulla tastiera non sono più dichiarati non verificabili', () => {
+  // La prova da tastiera li sposta da 'no' a 'parziale': non a 'si', perché
+  // osserva fatti meccanici e non l'usabilità.
+  for (const c of ['2.1.1','2.1.2','2.4.3','2.4.7','2.4.1']) {
+    assert.notEqual(CRITERI[c].auto, 'no', c + ' dovrebbe essere almeno parziale');
+    assert.notEqual(CRITERI[c].auto, 'si', c + ' non può essere pienamente automatico');
+  }
+});
+
+test('il riepilogo espone le statistiche della prova da tastiera', () => {
+  const r = riepiloga([
+    { url:'https://a.it', errore:null, violazioni:[], superati:20,
+      tastiera:{ elementiAttesi:21, elementiRaggiunti:20, focusControllati:20, trappolaTrovata:false, skipLink:true } },
+  ]);
+  assert.equal(r.tastiera.elementiPercorsi, 20);
+  assert.equal(r.tastiera.trappole, 0);
+  assert.equal(r.tastiera.conSkipLink, 1);
+});
+
+test('il report racconta la prova da tastiera e ne dichiara i limiti', () => {
+  const pg = [{ url:'https://a.it', errore:null, violazioni:[], superati:20,
+    tastiera:{ elementiAttesi:21, elementiRaggiunti:20, focusControllati:20, trappolaTrovata:false, skipLink:true } }];
+  const md = reportMarkdown({ dataScansione:new Date().toISOString(), pagine:pg, riepilogo:riepiloga(pg) }, { sito:'https://a.it' });
+  assert.match(md, /Prova da tastiera/);
+  assert.match(md, /20 elementi raggiunti/);
+  assert.match(md, /non l'usabilità/);
+});
+
+test('la checklist non chiede di rifare ciò che è già stato verificato', () => {
+  const v = VERIFICHE_MANUALI.find((x) => x.id === 'tastiera');
+  assert.match(v.come, /ha già percorso la pagina/);
+  assert.match(v.come, /si vede davvero/);
+});
+
 console.log('\nIndipendenza dal browser');
 
 test('nessun modulo sotto test tira dentro Playwright', () => {
@@ -472,7 +531,7 @@ test('nessun modulo sotto test tira dentro Playwright', () => {
   // importa lo scanner, che importa Playwright. Risultato: senza npm install
   // fallivano tutti, pur non avendo bisogno di un browser.
   // Solo scan.js e cli.js possono dipendere dal browser.
-  const consentiti = new Set(['scan.js', 'cli.js']);
+  const consentiti = new Set(['scan.js', 'cli.js', 'tastiera.js']);
   for (const file of fs.readdirSync(new URL('../src/', import.meta.url))) {
     if (!file.endsWith('.js') || consentiti.has(file)) continue;
     const testo = fs.readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');
