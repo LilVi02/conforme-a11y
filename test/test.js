@@ -444,6 +444,27 @@ test('il report mostra i casi incerti senza spacciarli per violazioni', () => {
   assert.match(md, /\| Problemi distinti rilevati \| 0 \|/);
 });
 
+test('il riepilogo espone i controlli superati come prova di scansione', () => {
+  const r = riepiloga([
+    { url:'https://w3.org', errore:null, violazioni:[], superati:29 },
+    { url:'https://mdn.org', errore:null, violazioni:[], superati:24 },
+  ]);
+  assert.equal(r.controlliSuperati, 53);
+  assert.equal(r.controlliSuperatiMin, 24);
+});
+
+test('un report senza violazioni mostra la prova che la scansione è avvenuta', () => {
+  // Senza questo dato, "sito pulito" e "pagina mai caricata" si leggono
+  // allo stesso modo: entrambi danno zero violazioni.
+  const pg = [{ url:'https://www.w3.org/', errore:null, violazioni:[], superati:29 }];
+  const md = reportMarkdown({
+    dataScansione:new Date().toISOString(), pagine:pg, riepilogo:riepiloga(pg),
+  }, { sito:'https://www.w3.org/' });
+  assert.match(md, /Prova che la scansione è avvenuta/);
+  assert.match(md, /29 controlli superati/);
+  assert.match(md, /inattendibile/);
+});
+
 console.log('\nIndipendenza dal browser');
 
 test('nessun modulo sotto test tira dentro Playwright', () => {

@@ -89,6 +89,13 @@ a questo controllo è reale: una scansione di `agid.gov.it` ha ricevuto una
 pagina di errore CloudFront e le ha addebitato un `lang` mancante che non era
 suo.
 
+## "Zero violazioni" non basta dirlo
+
+Un report con zero problemi e uno prodotto da uno scanner che non è riuscito a
+caricare la pagina si leggono allo stesso modo. Conforme riporta quindi quanti
+controlli sono stati effettivamente superati: una pagina reale ne supera
+decine, una schermata di errore pochissimi. È la prova che il risultato vale.
+
 ## Casi indecisi
 
 Alcuni controlli axe non riesce a deciderli: tipicamente il contrasto su sfondi
@@ -145,7 +152,7 @@ src/cli.js           Riga di comando
 npm test
 ```
 
-51 test, senza browser né rete: girano anche prima di `npm install`. Una parte presidia la **correttezza del contenuto**, non solo il funzionamento del codice:
+53 test, senza browser né rete: girano anche prima di `npm install`. Una parte presidia la **correttezza del contenuto**, non solo il funzionamento del codice:
 
 - che i titoli dei criteri siano quelli ufficiali W3C
 - che i livelli di conformità siano corretti (3.1.2 è AA, non A: errore frequente nelle fonti secondarie)
@@ -156,6 +163,7 @@ npm test
 - che ogni regola abbia una correzione specifica, e che due regole dello stesso criterio non ricevano lo stesso consiglio
 - che le pagine sospette (errori, muri anti-bot) siano segnalate e non conteggiate come risultati validi
 - che i casi indecisi da axe siano riportati, ma mai spacciati per violazioni accertate
+- che un report senza violazioni mostri la prova che la scansione è avvenuta
 
 Sono i test che impediscono al progetto di tornare a essere contenuto plausibile e non verificato.
 

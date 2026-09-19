@@ -49,6 +49,7 @@ export function reportMarkdown(esito, opzioni = {}) {
   if (r.occorrenzeDaVerificare) {
     righe.push(`| Casi che axe non ha saputo decidere | ${r.occorrenzeDaVerificare} |`);
   }
+  righe.push(`| Controlli superati | ${r.controlliSuperati ?? 0} |`);
   righe.push(`| Criteri verificabili in automatico | ${COPERTURA.automatici} su ${COPERTURA.totale} |`);
   righe.push(`| Criteri che richiedono verifica umana | ${COPERTURA.manuali + COPERTURA.parziali} su ${COPERTURA.totale} |`);
   righe.push(``);
@@ -87,8 +88,18 @@ export function reportMarkdown(esito, opzioni = {}) {
     righe.push(`## Nessun problema rilevato dai controlli automatici`);
     righe.push(``);
     righe.push(
-      `Significa che le ${COPERTURA.automatici + COPERTURA.parziali} verifiche automatizzabili non hanno trovato errori. ` +
-        `Restano da controllare a mano i criteri elencati più sotto: è lì che si trovano la maggior parte delle barriere reali.`
+      `I controlli automatizzabili non hanno trovato errori. Restano da verificare a mano ` +
+        `i criteri elencati più sotto: è lì che si trovano la maggior parte delle barriere reali.`
+    );
+    righe.push(``);
+    // Senza questo dato, "sito pulito" e "scanner che non ha caricato la
+    // pagina" si leggono allo stesso modo. Il numero di controlli superati
+    // dice che la scansione è davvero avvenuta.
+    righe.push(
+      `*Prova che la scansione è avvenuta:* ${r.controlliSuperati} controlli superati ` +
+        `in totale, almeno ${r.controlliSuperatiMin} per pagina. Una pagina che non si carica, ` +
+        `o una schermata di errore, ne supera pochissimi: se questo numero fosse sotto 5, ` +
+        `il risultato andrebbe considerato inattendibile.`
     );
     righe.push(``);
   } else {

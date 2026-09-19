@@ -105,8 +105,18 @@ export function riepiloga(pagine = []) {
     .map((r) => ({ ...r, pagine: [...r.pagine] }))
     .sort((a, b) => a.priorita - b.priorita || b.occorrenze - a.occorrenze);
 
+  // Quanti controlli sono stati effettivamente superati: è la prova che la
+  // scansione è avvenuta. Senza questo dato, "zero violazioni" e "lo scanner
+  // non ha caricato la pagina" si leggono allo stesso modo.
+  const controlliSuperati = pagine.reduce((n, p) => n + (p.superati || 0), 0);
+  const pagineAnalizzate = pagine.filter((p) => !p.errore);
+
   return {
     pagineScansionate: pagine.length,
+    controlliSuperati,
+    controlliSuperatiMin: pagineAnalizzate.length
+      ? Math.min(...pagineAnalizzate.map((p) => p.superati || 0))
+      : 0,
     pagineInErrore: pagine.filter((p) => p.errore).length,
     pagineSospette: pagine.filter((p) => p.sospetto).length,
     problemiDistinti: problemi.length,
