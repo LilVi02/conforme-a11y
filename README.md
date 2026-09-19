@@ -160,7 +160,19 @@ Strumento di supporto tecnico. Non sostituisce una valutazione professionale di 
 
 ## Licenza
 
-MIT
+Apache License 2.0 — vedi [LICENSE](LICENSE).
+
+Scelta rispetto a MIT per la concessione esplicita di brevetto e la clausola
+sui marchi: contano per l'adozione in contesti aziendali e nella pubblica
+amministrazione, che è il pubblico di questo strumento.
+
+### Licenze delle dipendenze
+
+| Dipendenza | Licenza | Cosa comporta |
+|---|---|---|
+| axe-core | MPL-2.0 | Copyleft a livello di file. Usarlo come dipendenza non vincola il codice di questo progetto. Modificandone i file, quelle modifiche restano MPL-2.0. |
+| @axe-core/playwright | MPL-2.0 | Come sopra. |
+| playwright | Apache-2.0 | Compatibile. |
 
 ## Fonti
 

@@ -1,0 +1,27 @@
+Conforme
+Copyright 2026 LilVi02
+
+Questo prodotto include software sviluppato da terzi:
+
+- axe-core (https://github.com/dequelabs/axe-core)
+  Copyright Deque Systems, Inc.
+  Licenza: Mozilla Public License 2.0
+
+- @axe-core/playwright (https://github.com/dequelabs/axe-core-npm)
+  Copyright Deque Systems, Inc.
+  Licenza: Mozilla Public License 2.0
+
+- Playwright (https://github.com/microsoft/playwright)
+  Copyright (c) Microsoft Corporation
+  Licenza: Apache License 2.0
+
+I titoli dei criteri di successo WCAG 2.1 riportati in src/wcag-it.js
+provengono dalla traduzione ufficiale autorizzata dal W3C:
+https://www.w3.org/Translations/WCAG21-it/
+
+Copyright © W3C (MIT, ERCIM, Keio, Beihang).
+Le WCAG 2.1 sono una Raccomandazione W3C pubblicata secondo i termini
+del W3C Document License e del W3C Software and Document Notice and License.
+
+I testi di "impatto" e "correzione" associati a ciascun criterio sono
+redazione originale di questo progetto e non sono testo normativo.

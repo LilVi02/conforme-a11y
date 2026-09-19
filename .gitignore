@@ -3,3 +3,5 @@ report/
 *.log
 .DS_Store
 .env
+pubblica.sh
+aggiorna.sh
