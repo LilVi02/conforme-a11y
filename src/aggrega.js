@@ -118,6 +118,8 @@ export function riepiloga(pagine = []) {
         elementiPercorsi: conTastiera.reduce((n, p) => n + p.tastiera.elementiRaggiunti, 0),
         focusControllati: conTastiera.reduce((n, p) => n + p.tastiera.focusControllati, 0),
         trappole: conTastiera.filter((p) => p.tastiera.trappolaTrovata).length,
+        confinate: conTastiera.filter((p) => p.tastiera.confinato).length,
+        percorsiCompleti: conTastiera.filter((p) => p.tastiera.percorsoCompleto).length,
         conSkipLink: conTastiera.filter((p) => p.tastiera.skipLink).length,
       }
     : null;

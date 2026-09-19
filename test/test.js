@@ -16,7 +16,7 @@ import { riepiloga, normalizzaViolazioni, troncaHtml } from '../src/aggrega.js';
 import { reportMarkdown, reportJson } from '../src/report.js';
 import { schedaPreparatoria, statoSuggerito } from '../src/dichiarazione.js';
 import { VERIFICHE_MANUALI, notaCopertura, criteriCopertiDaVerifiche, criteriScoperti } from '../src/manuale.js';
-import { normalizzaUrl, parseArgs, urlDaTesto } from '../src/argomenti.js';
+import { normalizzaUrl, parseArgs, urlDaTesto, cartellaPerSito } from '../src/argomenti.js';
 
 let passati = 0;
 const test = (nome, fn) => {
@@ -518,6 +518,31 @@ test('il report racconta la prova da tastiera e ne dichiara i limiti', () => {
   assert.match(md, /non l'usabilità/);
 });
 
+test('un percorso confinato non produce accuse di irraggiungibilità', () => {
+  // Il caso che ha rivelato il difetto: su comune.milano.it il banner dei
+  // cookie catturava il focus, il giro si chiudeva dopo 4 elementi e il
+  // report dichiarava irraggiungibili 10 elementi — fra cui un link "salta
+  // al contenuto" che esisteva ed era perfettamente funzionante.
+  assert.ok(REGOLE['tastiera-focus-confinato'], 'manca la regola sul confinamento');
+  assert.match(REGOLE['tastiera-focus-confinato'].correzione, /Esc|consenso|modale/i);
+  const [v] = normalizzaViolazioni([
+    { id:'tastiera-focus-confinato', help:'x', tags:['wcag2a','wcag212'], nodes:[{target:['div#banner'],html:'<div>'}] },
+  ]);
+  assert.equal(v.criteri[0].codice, '2.1.2');
+  assert.equal(v.priorita, 1);
+});
+
+test('il riepilogo distingue i percorsi completi da quelli interrotti', () => {
+  const r = riepiloga([
+    { url:'https://a.it', errore:null, violazioni:[], superati:20,
+      tastiera:{ percorsoCompleto:false, confinato:true, elementiRaggiunti:4, focusControllati:4, trappolaTrovata:false, skipLink:false } },
+    { url:'https://b.it', errore:null, violazioni:[], superati:20,
+      tastiera:{ percorsoCompleto:true, confinato:false, elementiRaggiunti:30, focusControllati:25, trappolaTrovata:false, skipLink:true } },
+  ]);
+  assert.equal(r.tastiera.confinate, 1);
+  assert.equal(r.tastiera.percorsiCompleti, 1);
+});
+
 test('la checklist non chiede di rifare ciò che è già stato verificato', () => {
   const v = VERIFICHE_MANUALI.find((x) => x.id === 'tastiera');
   assert.match(v.come, /ha già percorso la pagina/);
@@ -564,6 +589,30 @@ test('normalizzaUrl scarta quello che non è una URL', () => {
   assert.equal(normalizzaUrl(''), null);
   assert.equal(normalizzaUrl('   '), null);
   assert.equal(normalizzaUrl('ftp://esempio.it'), null);
+});
+
+test('la cartella prende il nome del sito', () => {
+  // Cartelle tutte chiamate "report" si sovrascrivono a vicenda.
+  assert.equal(cartellaPerSito('https://www.comune.milano.it/'), 'report_comune-milano-it');
+  assert.equal(cartellaPerSito('esempio.it'), 'report_esempio-it');
+  assert.equal(cartellaPerSito('https://sotto.dominio.gov.it/pagina'), 'report_sotto-dominio-gov-it');
+  assert.equal(cartellaPerSito('localhost:3000'), 'report_localhost-3000');
+});
+
+test('cartellaPerSito regge input strani senza rompersi', () => {
+  assert.equal(cartellaPerSito('non-una-url'), 'report');
+  assert.equal(cartellaPerSito(''), 'report');
+  assert.match(cartellaPerSito('file:///tmp/pagina-rotta.html'), /^report_/);
+  // Niente caratteri che darebbero noie al filesystem.
+  for (const v of ['https://a--b..c.it', 'https://WWW.MAIUSCOLO.IT']) {
+    assert.match(cartellaPerSito(v), /^report_[a-z0-9-]+$/);
+  }
+});
+
+test('parseArgs non impone una cartella predefinita', () => {
+  // Deve restare null, così la CLI può ricavarla dal sito.
+  assert.equal(parseArgs(['esempio.it']).out, null);
+  assert.equal(parseArgs(['esempio.it', '--out', 'mia']).out, 'mia');
 });
 
 test('parseArgs legge opzioni e URL', () => {

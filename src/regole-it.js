@@ -24,6 +24,11 @@ export const REGOLE = {
     correzione:
       'Qualcosa intercetta il tasto Tab e riporta il focus dov\'era. Di solito è un gestore di eventi con preventDefault() su keydown, oppure una finestra modale che cicla il focus senza offrire una via d\'uscita. Ogni componente che trattiene il focus deve poter essere chiuso con Esc e restituire il focus a chi l\'ha aperto.',
   },
+  'tastiera-focus-confinato': {
+    descrizione: 'Il focus resta chiuso dentro un contenitore',
+    correzione:
+      'Un contenitore — quasi sempre un banner di consenso o una finestra modale — trattiene il focus e non lo lascia uscire. Se è una modale il comportamento è corretto, ma deve potersi chiudere con Esc restituendo il focus a chi l\'ha aperta. Se è un banner dei cookie, il focus non deve restare intrappolato: chi naviga da tastiera deve poter raggiungere il resto della pagina anche senza rispondere. Verifica il gestore di keydown che intercetta Tab.',
+  },
   'tastiera-irraggiungibile': {
     descrizione: 'Elementi interattivi non raggiungibili da tastiera',
     correzione:

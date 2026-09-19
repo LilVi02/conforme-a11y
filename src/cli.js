@@ -12,7 +12,7 @@ import path from 'node:path';
 import { scansiona } from './scan.js';
 import { reportMarkdown, reportJson } from './report.js';
 import { schedaPreparatoria } from './dichiarazione.js';
-import { parseArgs, urlDaTesto } from './argomenti.js';
+import { parseArgs, urlDaTesto, cartellaPerSito } from './argomenti.js';
 
 const AIUTO = `
 Conforme — scanner di accessibilità con contesto normativo italiano
@@ -21,7 +21,7 @@ Conforme — scanner di accessibilità con contesto normativo italiano
 
 Opzioni:
   --file <path>     File di testo con una URL per riga (# per i commenti)
-  --out <dir>       Cartella di output (default: report)
+  --out <dir>       Cartella di output (default: report_<nome-del-sito>)
   --json            Salva anche il risultato grezzo in JSON
   --no-headless     Mostra il browser durante la scansione
   --help            Mostra questo messaggio
@@ -77,6 +77,10 @@ async function main() {
     console.log(`(${opts.urls.length - uniche.length} URL duplicate ignorate)`);
   }
 
+  // Senza --out la cartella prende il nome del sito: così scansioni diverse
+  // non si sovrascrivono e si riconoscono a colpo d'occhio.
+  const cartella = opts.out || cartellaPerSito(uniche[0]);
+
   console.log(`\nScansione di ${uniche.length} pagina/e…\n`);
 
   let esito;
@@ -98,16 +102,16 @@ async function main() {
     throw e;
   }
 
-  await mkdir(opts.out, { recursive: true });
+  await mkdir(cartella, { recursive: true });
 
-  await writeFile(path.join(opts.out, 'report.md'), reportMarkdown(esito, { sito: uniche[0] }), 'utf8');
+  await writeFile(path.join(cartella, 'report.md'), reportMarkdown(esito, { sito: uniche[0] }), 'utf8');
   await writeFile(
-    path.join(opts.out, 'scheda-dichiarazione.md'),
+    path.join(cartella, 'scheda-dichiarazione.md'),
     schedaPreparatoria(esito, { sito: uniche[0] }),
     'utf8'
   );
   if (opts.json) {
-    await writeFile(path.join(opts.out, 'risultato.json'), reportJson(esito), 'utf8');
+    await writeFile(path.join(cartella, 'risultato.json'), reportJson(esito), 'utf8');
   }
 
   const r = esito.riepilogo;
@@ -121,8 +125,8 @@ async function main() {
       console.log(`    ${p.url} — ${String(p.errore).split('\n')[0]}`);
     }
   }
-  console.log(`\n  Report:               ${path.join(opts.out, 'report.md')}`);
-  console.log(`  Scheda dichiarazione: ${path.join(opts.out, 'scheda-dichiarazione.md')}`);
+  console.log(`\n  Report:               ${path.join(cartella, 'report.md')}`);
+  console.log(`  Scheda dichiarazione: ${path.join(cartella, 'scheda-dichiarazione.md')}`);
   console.log(
     `\n  I controlli automatici coprono solo una parte dei criteri.\n  Le verifiche manuali sono elencate in fondo al report.\n`
   );

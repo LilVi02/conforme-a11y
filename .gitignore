@@ -1,5 +1,11 @@
 node_modules/
-report*/
+
+# I report delle scansioni restano locali: riguardano siti di terzi e
+# cambiano a ogni esecuzione.
+report/
+report_*/
+report-*/
+
 *.log
 .DS_Store
 .env

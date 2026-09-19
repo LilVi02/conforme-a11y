@@ -129,6 +129,7 @@ async function percorriConTab(page, maxTab) {
 
   let precedente = null;
   let fermiSuStesso = 0;
+  let motivoFine = 'limite';
 
   for (let i = 0; i < maxTab; i++) {
     await page.keyboard.press('Tab');
@@ -136,7 +137,10 @@ async function percorriConTab(page, maxTab) {
     const corrente = await page.evaluate(`(${DESCRIVI})(document.activeElement)`).catch(() => null);
 
     // Focus uscito dalla pagina (barra del browser): il giro è finito.
-    if (!corrente) break;
+    if (!corrente) {
+      motivoFine = 'uscito';
+      break;
+    }
 
     const chiave = corrente.selettore + '|' + corrente.testo;
 
@@ -146,20 +150,26 @@ async function percorriConTab(page, maxTab) {
       // Tre tentativi a vuoto: non è un caso.
       if (fermiSuStesso >= 3) {
         trappola = { ...corrente, dopoTab: i + 1 };
+        motivoFine = 'trappola';
         break;
       }
     } else {
       fermiSuStesso = 0;
     }
 
-    // Tornati al primo elemento: il ciclo si è chiuso, la pagina è percorsa.
-    if (sequenza.length > 1 && chiave === sequenza[0].selettore + '|' + sequenza[0].testo) break;
+    // Tornati al primo elemento: il focus ha chiuso un ciclo. NON significa
+    // per forza che la pagina sia stata percorsa: potrebbe essere un ciclo
+    // dentro una finestra modale. Chi chiama deve distinguere i due casi.
+    if (sequenza.length > 1 && chiave === sequenza[0].selettore + '|' + sequenza[0].testo) {
+      motivoFine = 'ciclo';
+      break;
+    }
 
     sequenza.push(corrente);
     precedente = chiave;
   }
 
-  return { sequenza, trappola, tabPremuti: sequenza.length };
+  return { sequenza, trappola, tabPremuti: sequenza.length, motivoFine };
 }
 
 /**
@@ -229,6 +239,65 @@ async function focusInvisibile(page, selettoreVivo) {
 }
 
 /**
+ * Stabilisce se il focus è rimasto confinato dentro un contenitore.
+ *
+ * Il caso tipico è il banner dei cookie: cattura il focus e lo fa girare al
+ * proprio interno. Senza questo controllo il percorso si chiude dopo pochi
+ * elementi e TUTTO il resto della pagina risulta irraggiungibile — comprese
+ * cose che esistono e funzionano. È successo su comune.milano.it: il report
+ * dichiarava assente un link "salta al contenuto" che era lì.
+ *
+ * Il segnale non è una soglia ma un fatto: tutti gli elementi raggiunti
+ * stanno dentro un unico contenitore, e altri elementi interattivi stanno
+ * fuori da quello.
+ */
+async function rilevaConfinamento(page, raggiunti, attesi) {
+  if (raggiunti.length === 0 || attesi.length <= raggiunti.length) return null;
+
+  try {
+    return await page.evaluate(
+      ({ selRaggiunti, selAttesi }) => {
+        const nodi = selRaggiunti.map((s) => document.querySelector(s)).filter(Boolean);
+        if (nodi.length === 0) return null;
+
+        // Antenato comune a tutti gli elementi raggiunti.
+        let comune = nodi[0];
+        for (const n of nodi.slice(1)) {
+          while (comune && !comune.contains(n)) comune = comune.parentElement;
+          if (!comune) return null;
+        }
+        if (!comune || comune === document.body || comune === document.documentElement) return null;
+
+        // Ci sono elementi interattivi fuori da quel contenitore?
+        const fuori = selAttesi
+          .map((s) => document.querySelector(s))
+          .filter((e) => e && !comune.contains(e));
+        if (fuori.length === 0) return null;
+
+        const html = comune.outerHTML || '';
+        const et = [comune.tagName.toLowerCase()];
+        if (comune.id) et.push('#' + comune.id);
+        else if (comune.className && typeof comune.className === 'string') {
+          const c = comune.className.trim().split(/\s+/).filter(Boolean).slice(0, 2);
+          if (c.length) et.push('.' + c.join('.'));
+        }
+
+        return {
+          etichetta: et.join(''),
+          html: html.length > 200 ? html.slice(0, 200) + '…' : html,
+          ruolo: comune.getAttribute('role') || null,
+          etichettaAria: comune.getAttribute('aria-label') || null,
+          elementiFuori: fuori.length,
+        };
+      },
+      { selRaggiunti: raggiunti.map((r) => r.selettore), selAttesi: attesi.map((a) => a.selettore) }
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Esegue i controlli da tastiera su una pagina già caricata.
  *
  * @param {import('playwright').Page} page
@@ -260,7 +329,14 @@ export async function verificaTastiera(page, opzioni = {}) {
   );
 
   // ── Percorso con Tab
-  const { sequenza, trappola, tabPremuti } = await percorriConTab(page, maxTab);
+  const { sequenza, trappola, tabPremuti, motivoFine } = await percorriConTab(page, maxTab);
+
+  // ── Il focus è rimasto chiuso dentro un contenitore?
+  // Va stabilito prima di ogni altra cosa: se il giro non ha coperto la
+  // pagina, gli altri risultati non valgono e riportarli sarebbe peggio che
+  // tacerli.
+  const confinamento =
+    motivoFine === 'ciclo' ? await rilevaConfinamento(page, sequenza, attesi) : null;
 
   // ── 1. Trappola: il focus non avanza più
   if (trappola) {
@@ -279,14 +355,37 @@ export async function verificaTastiera(page, opzioni = {}) {
     });
   }
 
-  // ── 2. Raggiungibilità
+  // ── 2. Focus confinato in un contenitore
+  if (confinamento) {
+    const chi = confinamento.etichettaAria
+      ? `"${confinamento.etichettaAria}"`
+      : confinamento.ruolo
+        ? `con role="${confinamento.ruolo}"`
+        : confinamento.etichetta;
+    violazioni.push({
+      id: 'tastiera-focus-confinato',
+      help: 'Il focus resta chiuso dentro un contenitore',
+      impact: 'critical',
+      tags: ['wcag2a', 'wcag212'],
+      nodes: [
+        {
+          target: [confinamento.etichetta],
+          html: confinamento.html,
+          failureSummary: `Premendo Tab il focus gira soltanto fra ${sequenza.length} elementi, tutti dentro questo contenitore ${chi}, e non ne esce: restano fuori ${confinamento.elementiFuori} elementi interattivi della pagina. È il comportamento tipico dei gestori di consenso e delle finestre modali che trattengono il focus. Chi naviga da tastiera non raggiunge il resto del sito.`,
+        },
+      ],
+    });
+  }
+
+  // ── 3. Raggiungibilità
   const raggiunti = new Set(sequenza.map((s) => s.selettore + '|' + s.testo));
   const irraggiungibili = attesi.filter((a) => !raggiunti.has(a.selettore + '|' + a.testo));
 
-  // Se il percorso si è interrotto per una trappola, la lista non è
-  // attendibile: non accusiamo elementi che semplicemente non abbiamo
-  // raggiunto perché ci siamo fermati prima.
-  if (!trappola && irraggiungibili.length) {
+  // Questa lista vale solo se il percorso ha davvero coperto la pagina. Se si
+  // è fermato per una trappola o è rimasto chiuso in un contenitore, gli
+  // elementi non raggiunti non sono irraggiungibili: semplicemente non ci
+  // siamo arrivati. Accusarli sarebbe un errore grossolano.
+  if (!trappola && !confinamento && irraggiungibili.length) {
     violazioni.push({
       id: 'tastiera-irraggiungibile',
       help: 'Elementi interattivi non raggiungibili da tastiera',
@@ -327,7 +426,7 @@ export async function verificaTastiera(page, opzioni = {}) {
   const haSkipLink =
     primo && primo.tag === 'a' && typeof primo.href === 'string' && primo.href.startsWith('#') && primo.href.length > 1;
 
-  if (sequenza.length > 15 && !haSkipLink) {
+  if (!confinamento && !trappola && sequenza.length > 15 && !haSkipLink) {
     violazioni.push({
       id: 'tastiera-senza-salto-blocchi',
       help: 'Nessun link per saltare direttamente al contenuto',
@@ -346,6 +445,9 @@ export async function verificaTastiera(page, opzioni = {}) {
   return {
     violazioni,
     statistiche: {
+      percorsoCompleto: !confinamento && !trappola,
+      confinato: Boolean(confinamento),
+      motivoFine,
       elementiAttesi: attesi.length,
       elementiRaggiunti: sequenza.length,
       tabPremuti,

@@ -10,7 +10,7 @@ npx playwright install chromium
 npm start -- esempio.it
 ```
 
-I file `report.md` e `scheda-dichiarazione.md` vengono scritti nella cartella `report/`.
+I file `report.md` e `scheda-dichiarazione.md` vengono scritti in una cartella intitolata al sito, per esempio `report_comune-milano-it/`. Le cartelle dei report non finiscono nel repository: riguardano siti di terzi e cambiano a ogni esecuzione.
 
 ## Cosa produce
 
@@ -45,6 +45,8 @@ axe analizza il DOM da fermo e non può premere Tab: per questo tutti i criteri 
 
 Conforme percorre la pagina premendo Tab davvero, e osserva quattro cose: che gli elementi interattivi visibili ricevano il focus, che il focus non resti bloccato, che dando il focus qualcosa cambi sullo schermo, che il primo Tab offra un link per saltare al contenuto.
 
+Quando il focus resta chiuso dentro un contenitore — il caso tipico è il banner dei cookie che lo trattiene — il percorso non copre la pagina. In quel caso Conforme riporta il confinamento, che è il problema vero, e tace sul resto: gli elementi non raggiunti non sono irraggiungibili, semplicemente il giro non ci è arrivato. Il controllo nasce da un errore reale, su comune.milano.it: il report dichiarava assente un link "salta al contenuto" che era lì e funzionava.
+
 Il limite del metodo va detto: osserva fatti meccanici, non usabilità. Sa dire che un elemento riceve il focus, non che l'indicatore sia percepibile; sa dire che nessun elemento è irraggiungibile, non che il percorso di acquisto si completi. Sposta questi criteri da "non verificabile" a "parzialmente verificato".
 
 ## Quanto copre
@@ -70,7 +72,7 @@ Per questa ragione il file generato si chiama scheda preparatoria: nel primo cas
 ```bash
 npm start -- esempio.it                          # lo schema si può omettere
 npm start -- esempio.it esempio.it/contatti      # più pagine
-npm start -- --file urls.txt --out report-sett   # da elenco
+npm start -- --file urls.txt --out cartella-mia  # cartella scelta da te
 npm start -- localhost:3000                      # in sviluppo, usa http
 npm start -- esempio.it --json                   # anche i dati grezzi
 ```
@@ -144,7 +146,7 @@ src/cli.js           entry point
 npm test
 ```
 
-59 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
+64 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
 
 ## Provenienza dei contenuti
 

@@ -62,6 +62,7 @@ export function reportMarkdown(esito, opzioni = {}) {
       `*Prova da tastiera:* la pagina è stata percorsa premendo Tab. ` +
         `${t.elementiPercorsi} elementi raggiunti, ${t.focusControllati} indicatori di focus controllati, ` +
         `${t.trappole === 0 ? 'nessuna trappola' : `${t.trappole} trappola/e`}, ` +
+        `${t.confinate ? `${t.confinate} pagina/e in cui il focus è rimasto chiuso in un contenitore, ` : ''}` +
         `link di salto al contenuto presente su ${t.conSkipLink} pagina/e su ${t.pagine}. ` +
         `Verifica i fatti meccanici, non l'usabilità: restano da controllare a mano i percorsi completi ` +
         `e la reale percepibilità dell'indicatore di focus.`

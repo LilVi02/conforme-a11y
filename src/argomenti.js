@@ -36,12 +36,46 @@ export function normalizzaUrl(voce) {
 }
 
 /**
+ * Ricava un nome di cartella dal sito analizzato.
+ *
+ * Con più scansioni in corso, cartelle tutte chiamate "report" si
+ * sovrascrivono a vicenda e non si capisce più quale sia quale.
+ *
+ *   https://www.comune.milano.it/  →  report_comune-milano-it
+ *   http://localhost:3000          →  report_localhost-3000
+ */
+export function cartellaPerSito(url) {
+  const u = normalizzaUrl(url);
+  if (!u) return 'report';
+  try {
+    const { hostname, port, protocol, pathname } = new URL(u);
+    if (protocol === 'file:') {
+      const nome = pathname.split('/').filter(Boolean).pop() || 'locale';
+      return 'report_' + ripulisci(nome.replace(/\.[a-z0-9]+$/i, ''));
+    }
+    const base = hostname.replace(/^www\./i, '') + (port ? '-' + port : '');
+    const pulito = ripulisci(base);
+    return pulito ? 'report_' + pulito : 'report';
+  } catch {
+    return 'report';
+  }
+}
+
+function ripulisci(testo) {
+  return String(testo)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+}
+
+/**
  * Interpreta gli argomenti. Solleva un errore leggibile sulle opzioni
  * malformate, e raccoglie in `scartati` ciò che non è una URL invece di
  * ignorarlo in silenzio.
  */
 export function parseArgs(argv) {
-  const opts = { urls: [], out: 'report', json: false, headless: true, file: null, help: false };
+  const opts = { urls: [], out: null, json: false, headless: true, file: null, help: false };
   const scartati = [];
 
   for (let i = 0; i < argv.length; i++) {
