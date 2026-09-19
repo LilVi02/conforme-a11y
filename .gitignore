@@ -1,7 +1,10 @@
 node_modules/
-report/
+report*/
 *.log
 .DS_Store
 .env
+
+# script di servizio locali
 pubblica.sh
 aggiorna.sh
+siti-test.txt

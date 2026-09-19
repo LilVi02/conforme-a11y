@@ -1,118 +1,99 @@
 # Conforme
 
-Scanner di accessibilità che collega ogni violazione tecnica al criterio WCAG corrispondente, spiegato in italiano, e dice **chi viene escluso** e **cosa scrivere al posto di cosa**.
+Scanner di accessibilità per siti italiani. Usa axe-core per la scansione, poi traduce ogni violazione nel criterio WCAG corrispondente, spiega chi resta fuori e cosa cambiare nel codice.
 
-La differenza rispetto agli altri scanner non è la scansione — quella la fa axe-core, come tutti. È cosa succede dopo: un report che una persona non tecnica può leggere e su cui può decidere, e una dichiarazione esplicita di ciò che lo strumento **non** può verificare.
-
-## Cosa c'è dentro
-
-- **Tutti e 50 i criteri WCAG 2.1** di livello A e AA, con i titoli nella traduzione ufficiale W3C
-- Per ogni criterio: chi viene escluso concretamente, e come si corregge nel codice
-- **48 regole axe** con descrizione E correzione specifica in italiano
-- **14 verifiche manuali** che coprono i 46 criteri che l'automazione non verifica
-- Contesto normativo italiano, con i **due regimi distinti** (Legge Stanca ed EAA) tenuti separati
-- Scheda preparatoria per la Dichiarazione di Accessibilità
-
-## Onestà sui limiti, con i numeri
-
-Dei 50 criteri WCAG 2.1 A/AA, un controllo automatico:
-
-| | |
-|---|---|
-| ne verifica **pienamente** | 4 |
-| ne intercetta **parzialmente** | 15 |
-| non può dire nulla su | 31 |
-
-Questi numeri sono calcolati dai dati del progetto, non citati a memoria: ogni criterio dichiara se è automatizzabile, e il report li ricalcola a ogni esecuzione.
-
-Ne segue una cosa che conviene dire chiaramente: **un report pulito non è una conformità**. Per questo Conforme produce sempre la checklist delle verifiche manuali, e segnala quali criteri resterebbero scoperti. Uno strumento che ti dicesse "100% conforme" ti starebbe mettendo nei guai.
-
-## I due regimi italiani
-
-Confonderli è l'errore più comune nella divulgazione sul tema, e porta a dire a una PMI che deve compilare un modulo che non la riguarda.
-
-| | Legge Stanca (L. 4/2004, D.L. 76/2020) | EAA (Dir. UE 2019/882, D.Lgs. 82/2022) |
-|---|---|---|
-| **Chi** | PA, società controllate, privati con fatturato medio >500 mln nel triennio | Imprese sopra la soglia di microimpresa (10+ dipendenti **o** >2 mln di fatturato) |
-| **Dichiarazione** | Valida **solo** se compilata su form.agid.gov.it | Contenuti obbligatori, ma **formato libero** |
-| **Tempi** | Aggiornamento entro il 23 settembre di ogni anno | In vigore dal 28 giugno 2025; transitorio fino al 2030 per il preesistente |
-
-Conforme genera una **scheda preparatoria**, non una dichiarazione: per i soggetti Legge Stanca nessun documento prodotto da uno strumento esterno sostituisce il modulo AgID, e dirlo è parte del lavoro.
-
-## Installazione
+Nato perché gli scanner esistenti restituiscono liste di regole in inglese, e chi deve decidere se spendere non le capisce.
 
 ```bash
 npm install
 npx playwright install chromium
+npm start -- esempio.it
 ```
 
-Se hai già Chrome o Chromium nel sistema (tipico in CI o in Docker):
+Trovi `report.md` e `scheda-dichiarazione.md` nella cartella `report/`.
+
+## Cosa produce
+
+Il report elenca i problemi in ordine di gravità per l'utente, non di severità tecnica. Ogni voce ha il criterio WCAG, l'impatto in parole, la correzione specifica per quella regola, e il codice dove si trova.
+
+```
+### 1. Link senza testo riconoscibile
+
+BLOCCANTE — impedisce di usare il sito
+Occorrenze: 19 su 1 pagina/e
+Regola tecnica: link-name
+
+Come si corregge: Ogni <a> deve avere un testo riconoscibile. Se contiene
+solo un'icona o un'immagine, metti l'alt sull'immagine o un aria-label sul
+link. Un link vuoto o con solo uno <svg> non viene annunciato.
+
+Criterio WCAG 2.4.4 — Scopo del collegamento (nel contesto) · livello A
+
+Chi viene escluso: Gli screen reader sanno elencare tutti i link di una
+pagina: una lista di "clicca qui" e "leggi di più" non dice nulla.
+
+Dove si trova:
+a[href$="municipio-8"]
+<a href="/web/municipio-8" target="_blank" rel="noreferrer">
+```
+
+Quello è un caso reale: 19 link ai Municipi sul sito del Comune di Milano, nessuno con un testo dentro. Chi usa uno screen reader sente diciannove link identici e non può scegliere il proprio.
+
+## Quanto copre
+
+Dei 50 criteri WCAG 2.1 A e AA, l'analisi automatica ne verifica pienamente 4, ne intercetta parzialmente 15, e sui restanti 31 non può dire niente.
+
+Un report pulito quindi non è una conformità, e il report lo scrive in cima. Insieme ai problemi arriva sempre la checklist delle 14 verifiche manuali che coprono gli altri criteri, con i tempi stimati.
+
+I numeri li calcola il codice: ogni criterio dichiara se è automatizzabile, e il totale si aggiorna da sé.
+
+## Gli obblighi in Italia sono due
+
+Vengono confusi spesso, anche da chi vende consulenza, e la differenza cambia cosa devi fare.
+
+**Legge Stanca** (L. 4/2004, estesa dal D.L. 76/2020) riguarda PA, società a controllo pubblico e privati con fatturato medio sopra i 500 milioni. La dichiarazione di accessibilità vale solo se compilata su form.agid.gov.it, va aggiornata entro il 23 settembre di ogni anno, e nessun documento prodotto da uno strumento esterno la sostituisce.
+
+**European Accessibility Act** (Dir. UE 2019/882, D.Lgs. 82/2022) riguarda le imprese sopra la soglia di microimpresa, dal 28 giugno 2025. Le informazioni sull'accessibilità sono obbligatorie ma il formato AgID non lo è.
+
+Per questo il file generato si chiama scheda preparatoria: nel primo caso serve a raccogliere i dati da riversare nel modulo AgID, nel secondo può diventare la base del documento da pubblicare.
+
+## Uso
+
+```bash
+npm start -- esempio.it                          # lo schema si può omettere
+npm start -- esempio.it esempio.it/contatti      # più pagine
+npm start -- --file urls.txt --out report-sett   # da elenco
+npm start -- localhost:3000                      # in sviluppo, usa http
+npm start -- esempio.it --json                   # anche i dati grezzi
+```
+
+Exit code 1 se ci sono problemi bloccanti o pagine irraggiungibili, per bloccare le regressioni in CI.
+
+Se hai già Chrome o Chromium puoi evitare il download di Playwright:
 
 ```bash
 export CONFORME_BROWSER_PATH=/percorso/del/chromium
 ```
 
-## Uso
+## Priorità
 
-```bash
-# Lo schema si può omettere
-npm start -- esempio.it
+1. impedisce di usare il sito
+2. ostacolo serio
+3. rallenta senza impedire
 
-# Più pagine, con JSON grezzo
-npm start -- esempio.it esempio.it/contatti --json
+Un contrasto insufficiente e un form non compilabile da tastiera hanno entrambi severità `serious` per axe. Per chi usa il sito non sono la stessa cosa.
 
-# Da file, una URL per riga (# per i commenti)
-npm start -- --file urls.txt --out report-settembre
+## Pagine che non sono il sito
 
-# Sito in sviluppo (localhost usa http di default)
-npm start -- localhost:3000
-```
+Un 403, una schermata anti-bot o una pagina di manutenzione rispondono comunque qualcosa, e uno scanner ingenuo le analizza come se fossero il sito.
 
-Output:
+È successo scansionando agid.gov.it: ha risposto con una pagina di errore CloudFront, e il report ha addebitato ad AgID un `lang` mancante che apparteneva ad Amazon. Ora le risposte 4xx e 5xx vengono scartate e le schermate intermedie segnalate.
 
-- `report.md` — problemi in ordine di priorità, con impatto, correzione e frammenti di codice; i casi che l'automazione non sa decidere; la checklist manuale
-- `scheda-dichiarazione.md` — materiale per preparare la dichiarazione
-- `risultato.json` — dati grezzi (con `--json`)
-
-Exit code `1` se ci sono problemi bloccanti o pagine irraggiungibili: utile in CI.
-
-## Quando la pagina analizzata non è quella giusta
-
-Un server che risponde 403 o 503, una schermata anti-bot o un muro di consenso
-restituiscono comunque una pagina, e uno scanner ingenuo la analizza come se
-fosse il sito — attribuendo al cliente violazioni che appartengono alla
-schermata di errore di qualcun altro.
-
-Conforme scarta le risposte HTTP di errore e segnala le pagine che sembrano
-schermate intermedie, invitando a ignorarne i risultati. Il caso che ha portato
-a questo controllo è reale: una scansione di `agid.gov.it` ha ricevuto una
-pagina di errore CloudFront e le ha addebitato un `lang` mancante che non era
-suo.
-
-## "Zero violazioni" non basta dirlo
-
-Un report con zero problemi e uno prodotto da uno scanner che non è riuscito a
-caricare la pagina si leggono allo stesso modo. Conforme riporta quindi quanti
-controlli sono stati effettivamente superati: una pagina reale ne supera
-decine, una schermata di errore pochissimi. È la prova che il risultato vale.
+Per lo stesso motivo il report riporta quanti controlli sono stati superati: una pagina vera ne supera 20-30, una schermata di errore 4. Senza quel numero, "zero violazioni" e "lo scanner non ha caricato niente" si leggono uguali.
 
 ## Casi indecisi
 
-Alcuni controlli axe non riesce a deciderli: tipicamente il contrasto su sfondi
-con immagini o gradienti, dove il colore dietro il testo non è calcolabile dal
-codice. Non sono violazioni accertate, ma nemmeno esiti puliti. Il report li
-elenca in una sezione a parte, senza conteggiarli tra i problemi: ometterli
-farebbe sembrare il sito migliore di quanto si sappia.
-
-## Priorità
-
-I problemi sono ordinati per **conseguenza sull'utente**, non per severità tecnica:
-
-| Priorità | Significato |
-|---|---|
-| 1 | Bloccante: impedisce di usare il sito |
-| 2 | Grave: ostacolo serio |
-| 3 | Attrito: rallenta senza impedire |
+axe restituisce anche i controlli che non è riuscito a decidere, quasi sempre il contrasto su sfondi con immagini o gradienti, dove il colore dietro il testo non è calcolabile. Finiscono in una sezione a parte, senza essere conteggiati tra i problemi.
 
 ## Come libreria
 
@@ -123,28 +104,30 @@ const esito = await scansiona(['https://esempio.it']);
 console.log(reportMarkdown(esito));
 ```
 
-Aggregazione, mappatura e report sono separati dalla scansione e non richiedono un browser: puoi darci in pasto risultati raccolti altrove.
+Mappatura, aggregazione e report non dipendono dal browser, quindi puoi passargli risultati raccolti altrove.
 
 ```js
-import { riepiloga, normalizzaViolazioni, reportMarkdown } from 'conforme';
+import { riepiloga, normalizzaViolazioni } from 'conforme';
 
 const pagine = [{ url, errore: null, violazioni: normalizzaViolazioni(risultatiAxe.violations) }];
 const esito = { dataScansione: new Date().toISOString(), pagine, riepilogo: riepiloga(pagine) };
 ```
 
-## Struttura
+## File
 
 ```
-src/wcag-it.js       I 50 criteri: titoli ufficiali, impatto, correzione, automatizzabilità
-src/regole-it.js     Traduzione delle regole axe-core
-src/manuale.js       Le 14 verifiche non automatizzabili, collegate ai criteri
-src/dichiarazione.js Scheda preparatoria e distinzione tra i due regimi
-src/argomenti.js     Interpretazione degli argomenti (logica pura)
-src/aggrega.js       Aggregazione (logica pura, senza browser)
-src/scan.js          Motore Playwright + axe-core
-src/report.js        Report Markdown e JSON
-src/cli.js           Riga di comando
+src/wcag-it.js       i 50 criteri: titolo ufficiale, impatto, correzione, automatizzabilità
+src/regole-it.js     le regole axe, con descrizione e correzione specifica
+src/manuale.js       le 14 verifiche manuali, collegate ai criteri che coprono
+src/dichiarazione.js scheda preparatoria e distinzione tra i due regimi
+src/argomenti.js     argomenti da riga di comando
+src/aggrega.js       aggregazione dei risultati
+src/scan.js          Playwright + axe-core
+src/report.js        Markdown e JSON
+src/cli.js           entry point
 ```
+
+`scan.js` e `cli.js` sono gli unici che importano Playwright. Il resto gira senza browser, e un test lo verifica.
 
 ## Test
 
@@ -152,62 +135,33 @@ src/cli.js           Riga di comando
 npm test
 ```
 
-53 test, senza browser né rete: girano anche prima di `npm install`. Una parte presidia la **correttezza del contenuto**, non solo il funzionamento del codice:
+53 test, nessuna dipendenza: girano anche prima di `npm install`. Oltre alla meccanica controllano il contenuto — che i titoli siano quelli della traduzione ufficiale W3C, che 3.1.2 sia classificato AA (le fonti secondarie sbagliano spesso), che due regole dello stesso criterio non ricevano lo stesso consiglio, che la scheda non si presenti mai come una dichiarazione valida.
 
-- che i titoli dei criteri siano quelli ufficiali W3C
-- che i livelli di conformità siano corretti (3.1.2 è AA, non A: errore frequente nelle fonti secondarie)
-- che la copertura dichiarata corrisponda ai dati reali
-- che automazione e checklist insieme non lascino criteri scoperti
-- che la scheda non si spacci mai per una dichiarazione valida
-- che nessun modulo sotto test importi Playwright (i test devono girare senza browser)
-- che ogni regola abbia una correzione specifica, e che due regole dello stesso criterio non ricevano lo stesso consiglio
-- che le pagine sospette (errori, muri anti-bot) siano segnalate e non conteggiate come risultati validi
-- che i casi indecisi da axe siano riportati, ma mai spacciati per violazioni accertate
-- che un report senza violazioni mostri la prova che la scansione è avvenuta
+## Da dove vengono i contenuti
 
-Sono i test che impediscono al progetto di tornare a essere contenuto plausibile e non verificato.
+I titoli dei criteri sono la [traduzione ufficiale W3C](https://www.w3.org/Translations/WCAG21-it/) e non vanno riscritti: sono i nomi con cui i criteri compaiono negli atti.
 
-## Provenienza dei contenuti
+I testi di impatto e correzione sono miei. Non sono testo normativo e non vanno citati come tale.
 
-Distinzione che conta, ed è mantenuta anche nel codice:
+Il quadro normativo viene dalle fonti AgID ed è orientativo, non consulenza legale.
 
-- I **titoli dei criteri** sono la traduzione ufficiale autorizzata dal W3C ([WCAG 2.1 in italiano](https://www.w3.org/Translations/WCAG21-it/)). Non vanno riscritti: sono i nomi con cui i criteri compaiono negli atti.
-- **Impatto e correzione** sono redazione nostra. Non sono testo normativo e non vanno citati come tale: servono a far capire il problema a chi deve risolverlo.
-- Il **quadro normativo** è tratto dalle fonti ufficiali AgID ed è una sintesi orientativa, non consulenza legale.
+## Contribuire
 
-## Contributi
+Quello che serve di più, in ordine:
 
-In ordine di utilità:
+1. Verifiche con screen reader che smentiscono il report. Se il tool dà per pulito un sito che NVDA rivela inagibile, voglio saperlo.
+2. Siti italiani su cui lo scanner sbaglia o si rompe.
+3. Correzioni ai testi, soprattutto da chi fa accessibilità di mestiere.
+4. Regole axe non ancora tradotte.
 
-1. **Verifiche con screen reader che smentiscono il report** — se il tool dà per pulito un sito che NVDA rivela inagibile, quello è il contributo più prezioso
-2. Siti italiani reali su cui lo scanner sbaglia o si rompe
-3. Correzioni ai testi di impatto e correzione, soprattutto da chi fa accessibilità di mestiere
-4. Traduzioni di regole axe mancanti
-
-Le segnalazioni di errori normativi hanno la precedenza su tutto il resto.
-
-## Avvertenza
-
-Strumento di supporto tecnico. Non sostituisce una valutazione professionale di accessibilità né costituisce consulenza legale. Il perimetro di applicazione delle norme va verificato caso per caso.
+Gli errori normativi hanno la precedenza su tutto.
 
 ## Licenza
 
-Apache License 2.0 — vedi [LICENSE](LICENSE).
+Apache 2.0, scelta rispetto a MIT per la concessione di brevetto e la clausola sui marchi, che pesano quando il software entra in un'azienda o in un ente.
 
-Scelta rispetto a MIT per la concessione esplicita di brevetto e la clausola
-sui marchi: contano per l'adozione in contesti aziendali e nella pubblica
-amministrazione, che è il pubblico di questo strumento.
+axe-core e @axe-core/playwright sono MPL-2.0, copyleft a livello di file: usarli come dipendenze non vincola questo codice, modificarne i file sì. Playwright è Apache 2.0.
 
-### Licenze delle dipendenze
+## Avvertenza
 
-| Dipendenza | Licenza | Cosa comporta |
-|---|---|---|
-| axe-core | MPL-2.0 | Copyleft a livello di file. Usarlo come dipendenza non vincola il codice di questo progetto. Modificandone i file, quelle modifiche restano MPL-2.0. |
-| @axe-core/playwright | MPL-2.0 | Come sopra. |
-| playwright | Apache-2.0 | Compatibile. |
-
-## Fonti
-
-- [WCAG 2.1 — traduzione ufficiale italiana, W3C](https://www.w3.org/Translations/WCAG21-it/)
-- [AgID — Dichiarazione di accessibilità](https://www.agid.gov.it/it/design-servizi/accessibilita/dichiarazione-accessibilita)
-- [AgID — Linee guida accessibilità per i privati](https://www.agid.gov.it/it/design-servizi/accessibilita/linee-guida-accessibilita-privati)
+Strumento di supporto tecnico. Non sostituisce una valutazione professionale di accessibilità e non è consulenza legale. Il perimetro di applicazione delle norme va verificato caso per caso.
