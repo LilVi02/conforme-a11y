@@ -76,12 +76,44 @@ export function riepiloga(pagine = []) {
         b.occorrenze - a.occorrenze
     );
 
+  // I controlli che axe non è riuscito a decidere: non sono violazioni
+  // accertate, ma nemmeno esiti puliti. Ometterli farebbe sembrare il sito
+  // migliore di quanto si sappia, ed è il tipo di silenzio che rende
+  // inaffidabile un report.
+  const perRegolaIncerta = new Map();
+  for (const p of pagine) {
+    for (const v of p.daVerificare || []) {
+      const e = perRegolaIncerta.get(v.regola);
+      if (e) {
+        e.occorrenze += v.occorrenze;
+        e.pagine.add(p.url);
+      } else {
+        perRegolaIncerta.set(v.regola, {
+          regola: v.regola,
+          descrizioneAxe: v.descrizioneAxe,
+          criteri: v.criteri,
+          priorita: v.priorita,
+          occorrenze: v.occorrenze,
+          pagine: new Set([p.url]),
+          esempi: (v.esempi || []).slice(0, 3).map((x) => ({ ...x, pagina: p.url })),
+        });
+      }
+    }
+  }
+
+  const daVerificare = [...perRegolaIncerta.values()]
+    .map((r) => ({ ...r, pagine: [...r.pagine] }))
+    .sort((a, b) => a.priorita - b.priorita || b.occorrenze - a.occorrenze);
+
   return {
     pagineScansionate: pagine.length,
     pagineInErrore: pagine.filter((p) => p.errore).length,
+    pagineSospette: pagine.filter((p) => p.sospetto).length,
     problemiDistinti: problemi.length,
     occorrenzeTotali,
     bloccanti: problemi.filter((p) => p.priorita === 1).length,
     problemi,
+    daVerificare,
+    occorrenzeDaVerificare: daVerificare.reduce((n, r) => n + r.occorrenze, 0),
   };
 }

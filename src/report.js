@@ -46,6 +46,9 @@ export function reportMarkdown(esito, opzioni = {}) {
   righe.push(`| Problemi distinti rilevati | ${r.problemiDistinti} |`);
   righe.push(`| Di cui bloccanti | ${r.bloccanti} |`);
   righe.push(`| Occorrenze totali nel codice | ${r.occorrenzeTotali} |`);
+  if (r.occorrenzeDaVerificare) {
+    righe.push(`| Casi che axe non ha saputo decidere | ${r.occorrenzeDaVerificare} |`);
+  }
   righe.push(`| Criteri verificabili in automatico | ${COPERTURA.automatici} su ${COPERTURA.totale} |`);
   righe.push(`| Criteri che richiedono verifica umana | ${COPERTURA.manuali + COPERTURA.parziali} su ${COPERTURA.totale} |`);
   righe.push(``);
@@ -60,6 +63,22 @@ export function reportMarkdown(esito, opzioni = {}) {
     }
     righe.push(``);
     righe.push(`Queste pagine non sono state analizzate: il risultato è incompleto finché non lo sono.`);
+    righe.push(``);
+  }
+
+  if (r.pagineSospette) {
+    righe.push(`### ⚠️ Pagine che potrebbero non essere quelle giuste`);
+    righe.push(``);
+    righe.push(
+      `Queste hanno risposto correttamente, ma non sembrano il sito richiesto: ` +
+        `possono essere schermate anti-bot, muri di consenso o pagine di manutenzione. ` +
+        `**I risultati che le riguardano vanno ignorati**: descrivono la schermata intermedia, non il sito.`
+    );
+    righe.push(``);
+    for (const p of (esito.pagine || []).filter((x) => x.sospetto)) {
+      righe.push(`- \`${p.url}\` — ${p.sospetto}`);
+      if (p.titolo) righe.push(`  - Titolo della pagina: "${p.titolo}"`);
+    }
     righe.push(``);
   }
 
@@ -133,6 +152,44 @@ export function reportMarkdown(esito, opzioni = {}) {
       for (const u of p.pagine.slice(0, 10)) righe.push(`- ${u}`);
       if (p.pagine.length > 10) righe.push(`- …e altre ${p.pagine.length - 10}`);
       righe.push(``);
+    }
+  }
+
+  // ── Casi che axe non ha saputo decidere
+  if (r.daVerificare?.length) {
+    righe.push(`## Da guardare: casi che il controllo automatico non ha saputo decidere`);
+    righe.push(``);
+    righe.push(
+      `Non sono violazioni accertate, e per questo non compaiono sopra. Ma non sono ` +
+        `nemmeno esiti puliti: axe non è riuscito a stabilire se il criterio sia rispettato ` +
+        `e ha lasciato la decisione a una persona. Il caso più comune è il contrasto su ` +
+        `sfondi con immagini o gradienti, dove il colore effettivo dietro il testo non è ` +
+        `calcolabile dal codice. Vanno verificati a occhio.`
+    );
+    righe.push(``);
+
+    for (const p of r.daVerificare) {
+      righe.push(`### ${descriviRegola(p.regola, p.descrizioneAxe)}`);
+      righe.push(``);
+      righe.push(`Casi da controllare: ${p.occorrenze} su ${p.pagine.length} pagina/e · regola \`${p.regola}\``);
+      righe.push(``);
+      const cor = correggiRegola(p.regola);
+      if (cor) {
+        righe.push(`*Se il problema c'è, si corregge così:* ${cor}`);
+        righe.push(``);
+      }
+      if (p.esempi?.length) {
+        righe.push(`*Dove guardare:*`);
+        righe.push(``);
+        for (const e of p.esempi.slice(0, 2)) {
+          righe.push(`\`${e.selettore}\``);
+          righe.push(``);
+          righe.push('```html');
+          righe.push(e.html);
+          righe.push('```');
+          righe.push(``);
+        }
+      }
     }
   }
 

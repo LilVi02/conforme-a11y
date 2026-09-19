@@ -70,11 +70,32 @@ npm start -- localhost:3000
 
 Output:
 
-- `report.md` — problemi in ordine di priorità, con impatto, correzione e frammenti di codice, più la checklist manuale
+- `report.md` — problemi in ordine di priorità, con impatto, correzione e frammenti di codice; i casi che l'automazione non sa decidere; la checklist manuale
 - `scheda-dichiarazione.md` — materiale per preparare la dichiarazione
 - `risultato.json` — dati grezzi (con `--json`)
 
 Exit code `1` se ci sono problemi bloccanti o pagine irraggiungibili: utile in CI.
+
+## Quando la pagina analizzata non è quella giusta
+
+Un server che risponde 403 o 503, una schermata anti-bot o un muro di consenso
+restituiscono comunque una pagina, e uno scanner ingenuo la analizza come se
+fosse il sito — attribuendo al cliente violazioni che appartengono alla
+schermata di errore di qualcun altro.
+
+Conforme scarta le risposte HTTP di errore e segnala le pagine che sembrano
+schermate intermedie, invitando a ignorarne i risultati. Il caso che ha portato
+a questo controllo è reale: una scansione di `agid.gov.it` ha ricevuto una
+pagina di errore CloudFront e le ha addebitato un `lang` mancante che non era
+suo.
+
+## Casi indecisi
+
+Alcuni controlli axe non riesce a deciderli: tipicamente il contrasto su sfondi
+con immagini o gradienti, dove il colore dietro il testo non è calcolabile dal
+codice. Non sono violazioni accertate, ma nemmeno esiti puliti. Il report li
+elenca in una sezione a parte, senza conteggiarli tra i problemi: ometterli
+farebbe sembrare il sito migliore di quanto si sappia.
 
 ## Priorità
 
@@ -124,7 +145,7 @@ src/cli.js           Riga di comando
 npm test
 ```
 
-47 test, senza browser né rete: girano anche prima di `npm install`. Una parte presidia la **correttezza del contenuto**, non solo il funzionamento del codice:
+51 test, senza browser né rete: girano anche prima di `npm install`. Una parte presidia la **correttezza del contenuto**, non solo il funzionamento del codice:
 
 - che i titoli dei criteri siano quelli ufficiali W3C
 - che i livelli di conformità siano corretti (3.1.2 è AA, non A: errore frequente nelle fonti secondarie)
@@ -133,6 +154,8 @@ npm test
 - che la scheda non si spacci mai per una dichiarazione valida
 - che nessun modulo sotto test importi Playwright (i test devono girare senza browser)
 - che ogni regola abbia una correzione specifica, e che due regole dello stesso criterio non ricevano lo stesso consiglio
+- che le pagine sospette (errori, muri anti-bot) siano segnalate e non conteggiate come risultati validi
+- che i casi indecisi da axe siano riportati, ma mai spacciati per violazioni accertate
 
 Sono i test che impediscono al progetto di tornare a essere contenuto plausibile e non verificato.
 

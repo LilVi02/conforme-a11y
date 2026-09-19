@@ -384,6 +384,66 @@ test('la scheda non invita a dichiarare la conformità senza verifiche', () => {
   assert.match(d, /espone a responsabilità/);
 });
 
+console.log('\nPagine non valide e casi incerti');
+
+test('riepiloga conta le pagine sospette', () => {
+  // Nasce da un caso reale: agid.gov.it ha risposto con una pagina di errore
+  // CloudFront e il report le ha addebitato un lang mancante che non era suo.
+  const r = riepiloga([
+    { url: 'https://a.it', errore: null, violazioni: [], sospetto: null },
+    { url: 'https://b.it', errore: null, violazioni: [], sospetto: 'il titolo è quello di una pagina di errore' },
+  ]);
+  assert.equal(r.pagineSospette, 1);
+});
+
+test('riepiloga aggrega i casi che axe non ha deciso', () => {
+  const incerti = normalizzaViolazioni([
+    { id: 'color-contrast', help: 'x', tags: ['wcag2aa', 'wcag143'],
+      nodes: [{ target: ['.hero'], html: '<div class="hero">' }] },
+  ]);
+  const r = riepiloga([
+    { url: 'https://a.it', errore: null, violazioni: [], daVerificare: incerti },
+    { url: 'https://b.it', errore: null, violazioni: [], daVerificare: incerti },
+  ]);
+  assert.equal(r.daVerificare.length, 1);
+  assert.equal(r.occorrenzeDaVerificare, 2);
+  assert.equal(r.daVerificare[0].pagine.length, 2);
+  // Non devono contare come violazioni accertate.
+  assert.equal(r.problemiDistinti, 0);
+  assert.equal(r.bloccanti, 0);
+});
+
+test('il report avverte sulle pagine sospette e invita a ignorarle', () => {
+  const pagineSosp = [
+    { url: 'https://agid.gov.it/', errore: null, violazioni: [],
+      sospetto: 'il titolo è quello di una pagina di errore',
+      titolo: 'ERROR: The request could not be satisfied' },
+  ];
+  const md = reportMarkdown({
+    dataScansione: new Date().toISOString(),
+    pagine: pagineSosp,
+    riepilogo: riepiloga(pagineSosp),
+  }, { sito: 'https://agid.gov.it/' });
+  assert.match(md, /potrebbero non essere quelle giuste/);
+  assert.match(md, /vanno ignorati/);
+  assert.match(md, /ERROR: The request could not be satisfied/);
+});
+
+test('il report mostra i casi incerti senza spacciarli per violazioni', () => {
+  const incerti = normalizzaViolazioni([
+    { id: 'color-contrast', help: 'x', tags: ['wcag2aa', 'wcag143'],
+      nodes: [{ target: ['.hero'], html: '<div class="hero">testo</div>' }] },
+  ]);
+  const pg = [{ url: 'https://a.it', errore: null, violazioni: [], daVerificare: incerti }];
+  const md = reportMarkdown({
+    dataScansione: new Date().toISOString(), pagine: pg, riepilogo: riepiloga(pg),
+  }, { sito: 'https://a.it' });
+  assert.match(md, /non ha saputo decidere/);
+  assert.match(md, /Non sono violazioni accertate/);
+  // La sintesi non deve conteggiarli tra i problemi.
+  assert.match(md, /\| Problemi distinti rilevati \| 0 \|/);
+});
+
 console.log('\nIndipendenza dal browser');
 
 test('nessun modulo sotto test tira dentro Playwright', () => {

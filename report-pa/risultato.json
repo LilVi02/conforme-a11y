@@ -1,0 +1,315 @@
+{
+  "dataScansione": "2026-09-19T20:36:27.793Z",
+  "pagine": [
+    {
+      "url": "https://www.inps.it/",
+      "titolo": "Portale Inps - Home",
+      "lingua": "it",
+      "violazioni": [
+        {
+          "regola": "aria-allowed-attr",
+          "descrizioneAxe": "Elements must only use supported ARIA attributes",
+          "gravitaAxe": "critical",
+          "criteri": [
+            {
+              "codice": "4.1.2",
+              "titolo": "Nome, ruolo, valore",
+              "livello": "A",
+              "principio": 4,
+              "auto": "parziale",
+              "impatto": "I componenti costruiti a mano — accordion, tab, select personalizzate — non comunicano cosa sono né in che stato si trovano: chi usa tecnologie assistive non può operarli.",
+              "correzione": "Usa gli elementi nativi quando puoi. Per i componenti su misura servono role, nome accessibile e stati aggiornati (aria-expanded, aria-selected, aria-checked).",
+              "priorita": 1
+            }
+          ],
+          "priorita": 1,
+          "occorrenze": 1,
+          "esempi": [
+            {
+              "selettore": "#modalcookiebar",
+              "html": "<div class=\"modal modalcookiebar show\" id=\"modalcookiebar\" aria-label=\"Privacy\" data-keyboard=\"false\" tabindex=\"-1\" data-backdrop=\"false\" aria-modal=\"true\" style=\"display: block;\">",
+              "dettaglio": "Fix all of the following:\n  ARIA attribute is not allowed: aria-modal=\"true\""
+            }
+          ],
+          "documentazione": "https://dequeuniversity.com/rules/axe/4.13/aria-allowed-attr?application=playwright"
+        }
+      ],
+      "daVerificare": [
+        {
+          "regola": "aria-prohibited-attr",
+          "descrizioneAxe": "Elements must only use permitted ARIA attributes",
+          "gravitaAxe": "serious",
+          "criteri": [
+            {
+              "codice": "4.1.2",
+              "titolo": "Nome, ruolo, valore",
+              "livello": "A",
+              "principio": 4,
+              "auto": "parziale",
+              "impatto": "I componenti costruiti a mano — accordion, tab, select personalizzate — non comunicano cosa sono né in che stato si trovano: chi usa tecnologie assistive non può operarli.",
+              "correzione": "Usa gli elementi nativi quando puoi. Per i componenti su misura servono role, nome accessibile e stati aggiornati (aria-expanded, aria-selected, aria-checked).",
+              "priorita": 1
+            }
+          ],
+          "priorita": 1,
+          "occorrenze": 1,
+          "esempi": [
+            {
+              "selettore": "#modalcookiebar",
+              "html": "<div class=\"modal modalcookiebar show\" id=\"modalcookiebar\" aria-label=\"Privacy\" data-keyboard=\"false\" tabindex=\"-1\" data-backdrop=\"false\" aria-modal=\"true\" style=\"display: block;\">",
+              "dettaglio": "Fix all of the following:\n  aria-label attribute is not well supported on a div with no valid role attribute."
+            }
+          ],
+          "documentazione": "https://dequeuniversity.com/rules/axe/4.13/aria-prohibited-attr?application=playwright"
+        },
+        {
+          "regola": "aria-valid-attr-value",
+          "descrizioneAxe": "ARIA attributes must conform to valid values",
+          "gravitaAxe": "critical",
+          "criteri": [
+            {
+              "codice": "4.1.2",
+              "titolo": "Nome, ruolo, valore",
+              "livello": "A",
+              "principio": 4,
+              "auto": "parziale",
+              "impatto": "I componenti costruiti a mano — accordion, tab, select personalizzate — non comunicano cosa sono né in che stato si trovano: chi usa tecnologie assistive non può operarli.",
+              "correzione": "Usa gli elementi nativi quando puoi. Per i componenti su misura servono role, nome accessibile e stati aggiornati (aria-expanded, aria-selected, aria-checked).",
+              "priorita": 1
+            }
+          ],
+          "priorita": 1,
+          "occorrenze": 3,
+          "esempi": [
+            {
+              "selettore": "#dropdownLanguage",
+              "html": "<button type=\"button\" id=\"dropdownLanguage\" class=\"btn dropdown-toggle btn-choose-language\" data-toggle=\"dropdown\" aria-controls=\"dropdownLanguageMenu\" aria-expanded=\"false\" aria-haspopup=\"listbox\">",
+              "dettaglio": "Fix all of the following:\n  Unable to determine if aria-controls referenced ID exists on the page while using aria-haspopup: aria-controls=\"dropdownLanguageMenu\""
+            },
+            {
+              "selettore": "button[aria-controls=\"bs-select-1\"]",
+              "html": "<button aria-controls=\"bs-select-1\" type=\"button\" class=\"btn dropdown-toggle bs-placeholder btn-light\" data-toggle=\"dropdown\" role=\"combobox\" aria-owns=\"bs-select-1\" aria-haspopup=\"listbox\" aria-expanded=\"false\" data-id=…",
+              "dettaglio": "Fix all of the following:\n  Unable to determine if aria-controls referenced ID exists on the page while using aria-haspopup: aria-controls=\"bs-select-1\""
+            },
+            {
+              "selettore": "button[aria-controls=\"bs-select-2\"]",
+              "html": "<button aria-controls=\"bs-select-2\" type=\"button\" class=\"btn dropdown-toggle ...\" data-toggle=\"dropdown\" role=\"combobox\" aria-owns=\"bs-select-2\" aria-haspopup=\"listbox\" aria-expanded=\"false\" data-id=\"input-argomenti-qn\" …",
+              "dettaglio": "Fix all of the following:\n  Unable to determine if aria-controls referenced ID exists on the page while using aria-haspopup: aria-controls=\"bs-select-2\""
+            }
+          ],
+          "documentazione": "https://dequeuniversity.com/rules/axe/4.13/aria-valid-attr-value?application=playwright"
+        },
+        {
+          "regola": "color-contrast",
+          "descrizioneAxe": "Elements must meet minimum color contrast ratio thresholds",
+          "gravitaAxe": "serious",
+          "criteri": [
+            {
+              "codice": "1.4.3",
+              "titolo": "Contrasto (minimo)",
+              "livello": "AA",
+              "principio": 1,
+              "auto": "si",
+              "impatto": "Chi ha ipovisione o presbiopia — e chiunque guardi lo schermo alla luce del sole — non riesce a leggere.",
+              "correzione": "Contrasto minimo 4.5:1 per il testo normale, 3:1 per il testo grande (18pt, o 14pt in grassetto). Il grigio chiaro su bianco è l'errore più diffuso: #767676 è il grigio più chiaro ammesso su fondo bianco.",
+              "priorita": 2
+            }
+          ],
+          "priorita": 2,
+          "occorrenze": 18,
+          "esempi": [
+            {
+              "selettore": ".grid-item-full:nth-child(1) > .card-image.mb-2.card > .card-image-left.col-md-6 > .card-category > .card-data",
+              "html": "<p class=\"card-data\">18 set 2026</p>",
+              "dettaglio": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+            },
+            {
+              "selettore": ".grid-item-full:nth-child(2) > .card-image.mb-2.card > .card-image-left.col-md-6 > .card-category > .card-data",
+              "html": "<p class=\"card-data\">04 set 2026</p>",
+              "dettaglio": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+            },
+            {
+              "selettore": ".grid-item-full:nth-child(3) > .card-image.mb-2.card > .card-image-left.col-md-6 > .card-category > .card-data",
+              "html": "<p class=\"card-data\">11 set 2026</p>",
+              "dettaglio": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+            },
+            {
+              "selettore": ".grid-item-full:nth-child(4) > .card-image.mb-2.card > .card-image-left.col-md-6 > .card-category > .card-data",
+              "html": "<p class=\"card-data\">09 set 2026</p>",
+              "dettaglio": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+            },
+            {
+              "selettore": ".grid-item-full:nth-child(5) > .card-image.mb-2.card > .card-image-left.col-md-6 > .card-category > .card-data",
+              "html": "<p class=\"card-data\">08 set 2026</p>",
+              "dettaglio": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+            }
+          ],
+          "documentazione": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright"
+        }
+      ],
+      "superati": 29,
+      "errore": null
+    },
+    {
+      "url": "https://www.agenziaentrate.gov.it/",
+      "titolo": "Due Agenzie al servizio del Paese - Portale Agenzia Entrate",
+      "lingua": "it-IT",
+      "violazioni": [],
+      "daVerificare": [
+        {
+          "regola": "color-contrast",
+          "descrizioneAxe": "Elements must meet minimum color contrast ratio thresholds",
+          "gravitaAxe": "serious",
+          "criteri": [
+            {
+              "codice": "1.4.3",
+              "titolo": "Contrasto (minimo)",
+              "livello": "AA",
+              "principio": 1,
+              "auto": "si",
+              "impatto": "Chi ha ipovisione o presbiopia — e chiunque guardi lo schermo alla luce del sole — non riesce a leggere.",
+              "correzione": "Contrasto minimo 4.5:1 per il testo normale, 3:1 per il testo grande (18pt, o 14pt in grassetto). Il grigio chiaro su bianco è l'errore più diffuso: #767676 è il grigio più chiaro ammesso su fondo bianco.",
+              "priorita": 2
+            }
+          ],
+          "priorita": 2,
+          "occorrenze": 7,
+          "esempi": [
+            {
+              "selettore": ".simple-view > h1 > div",
+              "html": "<div> Due Agenzie al servizio del Paese </div>",
+              "dettaglio": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+            },
+            {
+              "selettore": "a[data-lfr-editable-id=\"link1\"]",
+              "html": "<a role=\"button\" class=\"btn btn-light-primary me-3\" href=\"https://www.agenziaentrate.gov.it/portale/home\" target=\"_blank\" aria-label=\"\" data-lfr-editable-id=\"link1\" data-lfr-editable-type=\"link\">Vai al sito Agenzia delle…",
+              "dettaglio": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+            },
+            {
+              "selettore": "a[data-lfr-editable-id=\"link2\"]",
+              "html": "<a role=\"button\" class=\"btn btn-light-primary me-3\" href=\"https://www.agenziaentrateriscossione.gov.it/it/\" target=\"_blank\" aria-label=\"\" data-lfr-editable-id=\"link2\" data-lfr-editable-type=\"link\">Vai al sito Agenzia del…",
+              "dettaglio": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+            },
+            {
+              "selettore": ".titolo-sezione > div",
+              "html": "<div> I nostri servizi online </div>",
+              "dettaglio": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "selettore": "#fragment-4a015698-ad03-c8ae-16c9-16ee63402263 > .bg-custom-gradient.card-md-horizontal.card-servizi > .justify-content-between.card-body.align-items-center > .sezione-testo > .align-items-center.d-flex > .mb-0.card-title > div",
+              "html": "<div> Tutti i servizi di Agenzia Entrate </div>",
+              "dettaglio": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            }
+          ],
+          "documentazione": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright"
+        }
+      ],
+      "superati": 24,
+      "errore": null
+    },
+    {
+      "url": "https://www.agid.gov.it/",
+      "titolo": "ERROR: The request could not be satisfied",
+      "lingua": null,
+      "violazioni": [
+        {
+          "regola": "html-has-lang",
+          "descrizioneAxe": "<html> element must have a lang attribute",
+          "gravitaAxe": "serious",
+          "criteri": [
+            {
+              "codice": "3.1.1",
+              "titolo": "Lingua della pagina",
+              "livello": "A",
+              "principio": 3,
+              "auto": "si",
+              "impatto": "Lo screen reader legge il testo italiano con la pronuncia inglese: il risultato è incomprensibile.",
+              "correzione": "Imposta lang=\"it\" sul tag <html> di ogni pagina. Il valore dev'essere un codice valido (it, en, de), non \"italiano\" né una stringa vuota. Sui siti multilingua il lang cambia con la versione della pagina: non lasciarlo fisso su quello del sito originale.",
+              "priorita": 1
+            }
+          ],
+          "priorita": 1,
+          "occorrenze": 1,
+          "esempi": [
+            {
+              "selettore": "html",
+              "html": "<html>",
+              "dettaglio": "Fix any of the following:\n  The <html> element does not have a lang attribute"
+            }
+          ],
+          "documentazione": "https://dequeuniversity.com/rules/axe/4.13/html-has-lang?application=playwright"
+        }
+      ],
+      "daVerificare": [],
+      "superati": 4,
+      "errore": null
+    }
+  ],
+  "riepilogo": {
+    "pagineScansionate": 3,
+    "pagineInErrore": 0,
+    "problemiDistinti": 2,
+    "occorrenzeTotali": 2,
+    "bloccanti": 2,
+    "problemi": [
+      {
+        "regola": "aria-allowed-attr",
+        "descrizioneAxe": "Elements must only use supported ARIA attributes",
+        "criteri": [
+          {
+            "codice": "4.1.2",
+            "titolo": "Nome, ruolo, valore",
+            "livello": "A",
+            "principio": 4,
+            "auto": "parziale",
+            "impatto": "I componenti costruiti a mano — accordion, tab, select personalizzate — non comunicano cosa sono né in che stato si trovano: chi usa tecnologie assistive non può operarli.",
+            "correzione": "Usa gli elementi nativi quando puoi. Per i componenti su misura servono role, nome accessibile e stati aggiornati (aria-expanded, aria-selected, aria-checked).",
+            "priorita": 1
+          }
+        ],
+        "priorita": 1,
+        "occorrenze": 1,
+        "pagine": [
+          "https://www.inps.it/"
+        ],
+        "esempi": [
+          {
+            "selettore": "#modalcookiebar",
+            "html": "<div class=\"modal modalcookiebar show\" id=\"modalcookiebar\" aria-label=\"Privacy\" data-keyboard=\"false\" tabindex=\"-1\" data-backdrop=\"false\" aria-modal=\"true\" style=\"display: block;\">",
+            "dettaglio": "Fix all of the following:\n  ARIA attribute is not allowed: aria-modal=\"true\"",
+            "pagina": "https://www.inps.it/"
+          }
+        ]
+      },
+      {
+        "regola": "html-has-lang",
+        "descrizioneAxe": "<html> element must have a lang attribute",
+        "criteri": [
+          {
+            "codice": "3.1.1",
+            "titolo": "Lingua della pagina",
+            "livello": "A",
+            "principio": 3,
+            "auto": "si",
+            "impatto": "Lo screen reader legge il testo italiano con la pronuncia inglese: il risultato è incomprensibile.",
+            "correzione": "Imposta lang=\"it\" sul tag <html> di ogni pagina. Il valore dev'essere un codice valido (it, en, de), non \"italiano\" né una stringa vuota. Sui siti multilingua il lang cambia con la versione della pagina: non lasciarlo fisso su quello del sito originale.",
+            "priorita": 1
+          }
+        ],
+        "priorita": 1,
+        "occorrenze": 1,
+        "pagine": [
+          "https://www.agid.gov.it/"
+        ],
+        "esempi": [
+          {
+            "selettore": "html",
+            "html": "<html>",
+            "dettaglio": "Fix any of the following:\n  The <html> element does not have a lang attribute",
+            "pagina": "https://www.agid.gov.it/"
+          }
+        ]
+      }
+    ]
+  }
+}

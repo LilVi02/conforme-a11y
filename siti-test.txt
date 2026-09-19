@@ -1,0 +1,68 @@
+# Siti per mettere alla prova Conforme
+#
+# Uso:  npm start -- --file siti-test.txt --out report-campione --json
+#
+# Non sono siti a caso: ognuno mette alla prova una cosa diversa.
+# Alcuni falliranno (protezione anti-bot, cookie wall, JavaScript pesante):
+# i fallimenti sono informativi quanto i successi, perché dicono dove lo
+# scanner va reso più robusto.
+#
+# Conviene lanciarli a gruppi, non tutti insieme: ~15 secondi a pagina.
+
+# ─────────────────────────────────────────────────────────
+# GRUPPO 1 — Pubblica amministrazione (regime Legge Stanca)
+# Obbligo pieno, dichiarazione sul modulo AgID, scadenza 23 settembre.
+# Qui l'accessibilità non è un optional: sono servizi che non si possono
+# ottenere altrove.
+# ─────────────────────────────────────────────────────────
+
+www.inps.it
+www.agenziaentrate.gov.it
+www.salute.gov.it
+www.comune.roma.it
+www.comune.bologna.it
+
+# Il sito dell'autorità che vigila sull'accessibilità.
+# Se trovi problemi qui, è il caso più interessante di tutti.
+www.agid.gov.it
+
+# ─────────────────────────────────────────────────────────
+# GRUPPO 2 — Grandi privati (probabile regime Legge Stanca)
+# Fatturato ben oltre i 500 milioni: stesso obbligo della PA.
+# ─────────────────────────────────────────────────────────
+
+www.poste.it
+www.trenitalia.com
+www.enel.it
+www.intesasanpaolo.com
+
+# ─────────────────────────────────────────────────────────
+# GRUPPO 3 — E-commerce e servizi (regime EAA)
+# Dal 28 giugno 2025 devono essere accessibili, ma con formato libero
+# per le informazioni. È il pubblico più numeroso, e quello dove uno
+# strumento come questo serve di più.
+# ─────────────────────────────────────────────────────────
+
+www.esselunga.it
+www.unieuro.it
+www.mondadoristore.it
+
+# ─────────────────────────────────────────────────────────
+# GRUPPO 4 — Prove tecniche per lo scanner, non per i siti
+# Applicazioni a pagina singola e contenuto caricato via JavaScript:
+# servono a capire se l'attesa di 1 secondo dopo il caricamento basta.
+# Se qui i risultati sembrano troppo puliti, è lo scanner che guarda
+# la pagina troppo presto — non il sito che è perfetto.
+# ─────────────────────────────────────────────────────────
+
+www.italo.it
+www.subito.it
+
+# ─────────────────────────────────────────────────────────
+# GRUPPO 5 — Il controllo che conta
+# Un sito curato dovrebbe dare pochi problemi. Se ne dà quanti gli
+# altri, il tuo scanner ha dei falsi positivi e va indagato.
+# ─────────────────────────────────────────────────────────
+
+www.w3.org
+developer.mozilla.org
