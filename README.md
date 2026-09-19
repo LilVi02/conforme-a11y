@@ -8,7 +8,7 @@ La differenza rispetto agli altri scanner non è la scansione — quella la fa a
 
 - **Tutti e 50 i criteri WCAG 2.1** di livello A e AA, con i titoli nella traduzione ufficiale W3C
 - Per ogni criterio: chi viene escluso concretamente, e come si corregge nel codice
-- **48 regole axe tradotte** in italiano
+- **48 regole axe** con descrizione E correzione specifica in italiano
 - **14 verifiche manuali** che coprono i 46 criteri che l'automazione non verifica
 - Contesto normativo italiano, con i **due regimi distinti** (Legge Stanca ed EAA) tenuti separati
 - Scheda preparatoria per la Dichiarazione di Accessibilità
@@ -124,7 +124,7 @@ src/cli.js           Riga di comando
 npm test
 ```
 
-44 test, senza browser né rete: girano anche prima di `npm install`. Una parte presidia la **correttezza del contenuto**, non solo il funzionamento del codice:
+47 test, senza browser né rete: girano anche prima di `npm install`. Una parte presidia la **correttezza del contenuto**, non solo il funzionamento del codice:
 
 - che i titoli dei criteri siano quelli ufficiali W3C
 - che i livelli di conformità siano corretti (3.1.2 è AA, non A: errore frequente nelle fonti secondarie)
@@ -132,6 +132,7 @@ npm test
 - che automazione e checklist insieme non lascino criteri scoperti
 - che la scheda non si spacci mai per una dichiarazione valida
 - che nessun modulo sotto test importi Playwright (i test devono girare senza browser)
+- che ogni regola abbia una correzione specifica, e che due regole dello stesso criterio non ricevano lo stesso consiglio
 
 Sono i test che impediscono al progetto di tornare a essere contenuto plausibile e non verificato.
 

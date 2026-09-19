@@ -8,7 +8,7 @@
  */
 
 import { CONTESTO_NORMATIVO, PRINCIPI, COPERTURA } from './wcag-it.js';
-import { descriviRegola } from './regole-it.js';
+import { descriviRegola, correggiRegola } from './regole-it.js';
 import { VERIFICHE_MANUALI, notaCopertura, criteriScoperti } from './manuale.js';
 import { statoSuggerito } from './dichiarazione.js';
 
@@ -88,6 +88,15 @@ export function reportMarkdown(esito, opzioni = {}) {
       righe.push(`Regola tecnica: \`${p.regola}\``);
       righe.push(``);
 
+      // La correzione specifica della regola, quando esiste, è molto più utile
+      // di quella del criterio: un criterio ampio come 1.3.1 copre problemi
+      // diversissimi e il suo consiglio generico non aiuta a risolverne uno.
+      const correzioneRegola = correggiRegola(p.regola);
+      if (correzioneRegola) {
+        righe.push(`*Come si corregge:* ${correzioneRegola}`);
+        righe.push(``);
+      }
+
       for (const c of p.criteri) {
         if (!c.titolo) continue;
         righe.push(
@@ -96,8 +105,10 @@ export function reportMarkdown(esito, opzioni = {}) {
         righe.push(``);
         righe.push(`*Chi viene escluso:* ${c.impatto}`);
         righe.push(``);
-        righe.push(`*Come si corregge:* ${c.correzione}`);
-        righe.push(``);
+        if (!correzioneRegola) {
+          righe.push(`*Come si corregge:* ${c.correzione}`);
+          righe.push(``);
+        }
         if (c.nota) {
           righe.push(`*Da sapere:* ${c.nota}`);
           righe.push(``);

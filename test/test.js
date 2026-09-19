@@ -11,7 +11,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { CRITERI, CODICI, COPERTURA, CONTESTO_NORMATIVO, criteriDaTag, prioritaViolazione, scheda, criteriNonAutomatizzabili } from '../src/wcag-it.js';
-import { descriviRegola, REGOLE_IT } from '../src/regole-it.js';
+import { descriviRegola, correggiRegola, REGOLE, REGOLE_IT } from '../src/regole-it.js';
 import { riepiloga, normalizzaViolazioni, troncaHtml } from '../src/aggrega.js';
 import { reportMarkdown, reportJson } from '../src/report.js';
 import { schedaPreparatoria, statoSuggerito } from '../src/dichiarazione.js';
@@ -205,6 +205,32 @@ test('le traduzioni delle regole sono in italiano', () => {
     assert.ok(testo.length > 10, `${regola}: traduzione troppo corta`);
     assert.doesNotMatch(testo, /\bmust have\b|\bshould\b|\belements\b/i, `${regola}: sembra inglese`);
   }
+});
+
+test('ogni regola ha una correzione specifica e concreta', () => {
+  // Nasce da una prova su un sito reale: aria-required-parent e list
+  // ricadevano entrambe sul consiglio generico del criterio 1.3.1
+  // ("usa HTML semantico"), inutile per entrambe.
+  for (const [regola, v] of Object.entries(REGOLE)) {
+    assert.ok(v.descrizione, `${regola}: manca la descrizione`);
+    assert.ok(v.correzione, `${regola}: manca la correzione specifica`);
+    assert.ok(v.correzione.length > 35, `${regola}: correzione troppo vaga`);
+  }
+});
+
+test('la correzione della regola è diversa da quella generica del criterio', () => {
+  // Il caso che ha rivelato il difetto: due regole molto diverse, stesso
+  // criterio. Devono ricevere consigli diversi, o il report non serve.
+  const a = correggiRegola('aria-required-parent');
+  const b = correggiRegola('list');
+  assert.ok(a && b);
+  assert.notEqual(a, b, 'due regole dello stesso criterio hanno la stessa correzione');
+  assert.match(a, /menu|listitem|tablist/i, 'la correzione non parla del problema reale');
+  assert.match(b, /<li>|<ul>/i, 'la correzione non parla del problema reale');
+});
+
+test('correggiRegola restituisce null per le regole sconosciute', () => {
+  assert.equal(correggiRegola('regola-inventata'), null);
 });
 
 const violazioneAxe = {
