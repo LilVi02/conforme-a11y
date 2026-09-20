@@ -21,11 +21,9 @@
 
 import { CONTESTO_NORMATIVO, COPERTURA } from './wcag-it.js';
 import { descriviRegola } from './regole-it.js';
+import { plurale } from './testo.js';
 
 const URL_FORM_AGID = 'https://form.agid.gov.it';
-
-/** "1 occorrenze" si nota, e un documento che va a un cliente non se lo può permettere. */
-const plurale = (n, singolare, plurale_) => `${n} ${n === 1 ? singolare : plurale_}`;
 
 /** Stato di conformità suggerito dai soli dati automatici. */
 export function statoSuggerito(riepilogo) {

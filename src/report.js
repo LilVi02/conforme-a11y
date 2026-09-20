@@ -11,6 +11,7 @@ import { CONTESTO_NORMATIVO, PRINCIPI, COPERTURA } from './wcag-it.js';
 import { descriviRegola, correggiRegola } from './regole-it.js';
 import { VERIFICHE_MANUALI, notaCopertura, criteriScoperti } from './manuale.js';
 import { statoSuggerito } from './dichiarazione.js';
+import { plurale, conArticolo } from './testo.js';
 
 const ETICHETTA_PRIORITA = {
   1: 'BLOCCANTE — impedisce di usare il sito',
@@ -72,7 +73,7 @@ export function smentisciVerifica(id, r) {
   const dove =
     t.pagine === 1
       ? 'sull\'unica pagina analizzata'
-      : `su ${fermate} pagina/e su ${t.pagine}`;
+      : `su ${plurale(fermate, 'pagina', 'pagine')} su ${t.pagine}`;
   return (
     `Il percorso con Tab non è arrivato in fondo ${dove}` +
     `${t.percorsiFermatiInUnContenitore ? ' — si è fermato dentro un contenitore, di solito un banner di consenso o una finestra modale' : ''}. ` +
@@ -137,10 +138,10 @@ export function reportMarkdown(esito, opzioni = {}) {
     righe.push(
       `*Prova da tastiera:* la pagina è stata percorsa premendo Tab. ` +
         `${t.elementiPercorsi} elementi raggiunti, ${t.focusControllati} indicatori di focus controllati, ` +
-        `${t.trappole === 0 ? 'nessuna trappola' : `${t.trappole} trappola/e`}, ` +
+        `${t.trappole === 0 ? 'nessuna trappola' : plurale(t.trappole, 'trappola', 'trappole')}, ` +
         `${
           t.percorsiFermatiInUnContenitore
-            ? `${t.percorsiFermatiInUnContenitore} pagina/e in cui il percorso si è fermato dentro un contenitore, `
+            ? `${conArticolo(t.percorsiFermatiInUnContenitore, 'una pagina', 'pagine')} in cui il percorso si è fermato dentro un contenitore, `
             : ''
         }` +
         // Il link di salto si può dire assente solo dove il percorso è arrivato
@@ -150,8 +151,8 @@ export function reportMarkdown(esito, opzioni = {}) {
           t.percorsiCompleti === 0
             ? 'nessun percorso completato per intero, quindi sul link di salto al contenuto non si può dire nulla'
             : t.conSkipLink === 0
-              ? `nessuna delle ${t.percorsiCompleti} pagina/e percorse per intero offre un link di salto al contenuto`
-              : `link di salto al contenuto presente su ${t.conSkipLink} delle ${t.percorsiCompleti} pagina/e percorse per intero`
+              ? `nessuna delle ${plurale(t.percorsiCompleti, 'pagina percorsa', 'pagine percorse')} per intero offre un link di salto al contenuto`
+              : `link di salto al contenuto presente su ${t.conSkipLink} delle ${plurale(t.percorsiCompleti, 'pagina percorsa', 'pagine percorse')} per intero`
         }. ` +
         `Verifica i fatti meccanici, non l'usabilità: restano da controllare a mano i percorsi completi ` +
         `e la reale percepibilità dell'indicatore di focus.`
@@ -164,8 +165,8 @@ export function reportMarkdown(esito, opzioni = {}) {
     righe.push(
       `*Prova di reflow:* la finestra è stata ridotta a 320 px — l'equivalente di uno zoom al 400% — ` +
         `e poi è stata applicata la spaziatura del testo prevista dalla norma. ` +
-        `${f.conScorrimento === 0 ? 'Nessuna pagina produce scorrimento orizzontale' : `${f.conScorrimento} pagina/e su ${f.pagine} producono scorrimento orizzontale, fino a ${f.scorrimentoMax} px`}; ` +
-        `${f.tagliatiDallaSpaziatura === 0 ? 'nessun contenitore taglia il testo con più spaziatura' : `${f.tagliatiDallaSpaziatura} contenitore/i tagliano il testo con più spaziatura`}. ` +
+        `${f.conScorrimento === 0 ? 'Nessuna pagina produce scorrimento orizzontale' : `${plurale(f.conScorrimento, 'pagina', 'pagine')} su ${f.pagine} ${f.conScorrimento === 1 ? 'produce' : 'producono'} scorrimento orizzontale, fino a ${f.scorrimentoMax} px`}; ` +
+        `${f.tagliatiDallaSpaziatura === 0 ? 'nessun contenitore taglia il testo con più spaziatura' : `${plurale(f.tagliatiDallaSpaziatura, 'contenitore taglia', 'contenitori tagliano')} il testo con più spaziatura`}. ` +
         `Resta da guardare a occhio se il layout ricalcolato sia ancora comprensibile: ` +
         `una pagina può non scorrere in orizzontale e avere comunque il menu che copre il contenuto.`
     );
@@ -230,7 +231,7 @@ export function reportMarkdown(esito, opzioni = {}) {
       righe.push(`### ${i + 1}. ${descriviRegola(p.regola, p.descrizioneAxe)}`);
       righe.push(``);
       righe.push(`**${ETICHETTA_PRIORITA[p.priorita]}**  `);
-      righe.push(`Occorrenze: ${p.occorrenze} su ${p.pagine.length} pagina/e  `);
+      righe.push(`Occorrenze: ${p.occorrenze} su ${plurale(p.pagine.length, 'pagina', 'pagine')}  `);
       righe.push(`Regola tecnica: \`${p.regola}\``);
       righe.push(``);
 
@@ -357,7 +358,9 @@ export function reportMarkdown(esito, opzioni = {}) {
     for (const p of r.daVerificare) {
       righe.push(`### ${descriviRegola(p.regola, p.descrizioneAxe)}`);
       righe.push(``);
-      righe.push(`Casi da controllare: ${p.occorrenze} su ${p.pagine.length} pagina/e · regola \`${p.regola}\``);
+      righe.push(
+        `Casi da controllare: ${p.occorrenze} su ${plurale(p.pagine.length, 'pagina', 'pagine')} · regola \`${p.regola}\``
+      );
       righe.push(``);
       // Anche qui va detto da dove arriva. Senza, la tabella dei componenti in
       // fondo conta segnalazioni che il lettore non riesce a ritrovare: su

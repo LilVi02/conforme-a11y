@@ -13,6 +13,7 @@ import { scansiona } from './scan.js';
 import { reportMarkdown, reportJson } from './report.js';
 import { schedaPreparatoria } from './dichiarazione.js';
 import { parseArgs, urlDaTesto, cartellaPerSito } from './argomenti.js';
+import { plurale } from './testo.js';
 
 const AIUTO = `
 Conforme — scanner di accessibilità con contesto normativo italiano
@@ -81,7 +82,7 @@ async function main() {
   // non si sovrascrivono e si riconoscono a colpo d'occhio.
   const cartella = opts.out || cartellaPerSito(uniche[0]);
 
-  console.log(`\nScansione di ${uniche.length} pagina/e…\n`);
+  console.log(`\nScansione di ${plurale(uniche.length, 'pagina', 'pagine')}…\n`);
 
   let esito;
   try {

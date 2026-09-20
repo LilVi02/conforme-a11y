@@ -25,6 +25,7 @@ import { reportMarkdown, reportJson, smentisciVerifica } from '../src/report.js'
 import { schedaPreparatoria, statoSuggerito } from '../src/dichiarazione.js';
 import { VERIFICHE_MANUALI, notaCopertura, criteriCopertiDaVerifiche, criteriScoperti } from '../src/manuale.js';
 import { normalizzaUrl, parseArgs, urlDaTesto, cartellaPerSito } from '../src/argomenti.js';
+import { plurale, conArticolo } from '../src/testo.js';
 import {
   riconosciComponente,
   attribuisciNodo,
@@ -1312,6 +1313,44 @@ test('un controllo non riuscito non viene introdotto come se fosse un difetto', 
   const pg = [{ url:'https://a.it', errore:null, violazioni:[], superati:20, daVerificare:incerte }];
   const md = reportMarkdown({ dataScansione:new Date().toISOString(), pagine:pg, riepilogo:riepiloga(pg) }, { sito:'https://a.it' });
   assert.match(md, /Come completare la verifica:/);
+});
+
+// ══════════════════════════════════════════ Italiano corretto
+
+console.log('\nI documenti generati sono scritti in italiano, non in barre');
+
+test('plurale e conArticolo accordano il sostantivo', () => {
+  assert.equal(plurale(1, 'pagina', 'pagine'), '1 pagina');
+  assert.equal(plurale(3, 'pagina', 'pagine'), '3 pagine');
+  assert.equal(plurale(0, 'pagina', 'pagine'), '0 pagine');
+  assert.equal(conArticolo(1, 'una pagina', 'pagine'), 'una pagina');
+  assert.equal(conArticolo(4, 'una pagina', 'pagine'), '4 pagine');
+});
+
+test('nessun documento generato contiene "pagina/e" e simili', () => {
+  // La barra è la scorciatoia di chi non vuole gestire il plurale, e fa
+  // leggere il documento come l'uscita di una macchina. Questi documenti
+  // finiscono allegati a un preventivo.
+  const [v] = normalizzaViolazioni([
+    { id:'link-name', tags:['wcag2a','wcag244'], nodes:[{ target:['#a'], html:'<a>' }] },
+  ]);
+  const incerte = normalizzaViolazioni([
+    { id:'color-contrast', tags:['wcag2aa','wcag143'], nodes:[{ target:['#b'], html:'<p>' }] },
+  ]);
+  const pg = [
+    { url:'https://a.it', errore:null, violazioni:[v], daVerificare:incerte, superati:20,
+      tastiera:{ percorsoCompleto:false, confinato:true, elementiRaggiunti:4, focusControllati:4, trappolaTrovata:true, skipLink:false },
+      reflow:{ scorrimentoA320:12, tagliatiDallaSpaziatura:1 } },
+  ];
+  const esitoPl = { dataScansione:new Date().toISOString(), pagine:pg, riepilogo:riepiloga(pg) };
+
+  for (const [nome, testo] of [
+    ['report', reportMarkdown(esitoPl, { sito:'https://a.it' })],
+    ['scheda', schedaPreparatoria(esitoPl, { sito:'https://a.it' })],
+  ]) {
+    assert.doesNotMatch(testo, /\b\w+\/[ei]\b/, `${nome}: contiene un plurale con la barra`);
+    assert.doesNotMatch(testo, /\b1 (pagine|occorrenze|segnalazioni|trappole|contenitori|casi)\b/, `${nome}: plurale sbagliato al singolare`);
+  }
 });
 
 console.log(`\n${passati} test superati${process.exitCode ? ' — CI SONO ERRORI' : ''}\n`);

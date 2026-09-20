@@ -193,6 +193,7 @@ src/struttura.js     ordine di lettura, vie di navigazione
 src/manuale.js       le 14 verifiche manuali, collegate ai criteri che coprono
 src/dichiarazione.js scheda preparatoria e distinzione fra i due regimi
 src/argomenti.js     argomenti da riga di comando
+src/testo.js         accordo del plurale nei documenti generati
 src/origine.js       attribuisce ogni segnalazione al sito o a un componente esterno
 src/aggrega.js       aggregazione dei risultati
 src/scan.js          Playwright + axe-core
@@ -208,7 +209,7 @@ I moduli che pilotano il browser sono `scan.js`, `tastiera.js`, `reflow.js`, `me
 npm test
 ```
 
-117 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
+119 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
 
 ```bash
 npm run test:browser
