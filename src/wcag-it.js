@@ -213,7 +213,7 @@ export const CRITERI = {
     titolo: 'Ricalcolo del flusso',
     livello: 'AA',
     principio: 1,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Su schermo piccolo o con forte ingrandimento compare lo scorrimento orizzontale: leggere diventa faticoso o impossibile.',
     correzione:
@@ -235,7 +235,7 @@ export const CRITERI = {
     titolo: 'Spaziatura del testo',
     livello: 'AA',
     principio: 1,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Chi è dislessico o ipovedente usa fogli di stile personali per distanziare il testo: se il layout si rompe, il sito diventa inservibile.',
     correzione:

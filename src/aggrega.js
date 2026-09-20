@@ -110,6 +110,17 @@ export function riepiloga(pagine = []) {
   // non ha caricato la pagina" si leggono allo stesso modo.
   const controlliSuperati = pagine.reduce((n, p) => n + (p.superati || 0), 0);
 
+  // Riepilogo delle prove di reflow.
+  const conReflow = pagine.filter((p) => p.reflow);
+  const reflow = conReflow.length
+    ? {
+        pagine: conReflow.length,
+        conScorrimento: conReflow.filter((p) => p.reflow.scorrimentoA320 > 0).length,
+        scorrimentoMax: Math.max(...conReflow.map((p) => p.reflow.scorrimentoA320)),
+        tagliatiDallaSpaziatura: conReflow.reduce((n, p) => n + p.reflow.tagliatiDallaSpaziatura, 0),
+      }
+    : null;
+
   // Riepilogo della prova da tastiera, che non passa da axe.
   const conTastiera = pagine.filter((p) => p.tastiera);
   const tastiera = conTastiera.length
@@ -132,6 +143,7 @@ export function riepiloga(pagine = []) {
       ? Math.min(...pagineAnalizzate.map((p) => p.superati || 0))
       : 0,
     tastiera,
+    reflow,
     pagineInErrore: pagine.filter((p) => p.errore).length,
     pagineSospette: pagine.filter((p) => p.sospetto).length,
     problemiDistinti: problemi.length,

@@ -47,9 +47,9 @@ export const VERIFICHE_MANUALI = [
     criteri: ['1.4.4', '1.4.10', '1.4.12'],
     titolo: 'Ingrandire al 200% e al 400%',
     come:
-      'Porta il browser al 200%, poi al 400%. A 400% la finestra equivale a 320 px di larghezza: non deve comparire scorrimento orizzontale, né testo tagliato o sovrapposto. Prova anche a forzare interlinea 1.5 e spaziatura tra paragrafi 2em.',
+      'Conforme ha già ridotto la finestra a 320 px — quanto si ottiene ingrandendo al 400% — e ha misurato se compare scorrimento orizzontale; poi ha applicato la spaziatura prevista dalla norma e guardato se qualche contenitore taglia il testo. Quei risultati sono fra i problemi qui sopra. Resta da fare la parte che richiede occhio: porta il browser al 200% e leggi davvero la pagina. Il layout ricalcolato è ancora comprensibile, o il menu copre il contenuto? Le colonne si sono impilate in un ordine che ha senso? Qualche testo si sovrappone a un altro senza essere tagliato? Un ingrandimento può non produrre scorrimento e rendere comunque la pagina illeggibile.',
     seFallisce: 'Chi ha ipovisione naviga abitualmente ingrandito: qui si decide se può usare il sito.',
-    tempo: '15 min',
+    tempo: '10 min',
   },
   {
     id: 'ordine-lettura',

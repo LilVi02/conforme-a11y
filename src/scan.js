@@ -13,6 +13,7 @@ import { chromium } from 'playwright';
 import { AxeBuilder } from '@axe-core/playwright';
 import { normalizzaViolazioni, riepiloga } from './aggrega.js';
 import { verificaTastiera } from './tastiera.js';
+import { verificaReflow } from './reflow.js';
 
 const TAG_WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
@@ -23,7 +24,7 @@ const TAG_WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
  * @param {{timeout?: number, attesa?: number}} opzioni
  */
 export async function scansionaPagina(browser, url, opzioni = {}) {
-  const { timeout = 30000, attesa = 1000, tastiera = true } = opzioni;
+  const { timeout = 30000, attesa = 1000, tastiera = true, reflow = true } = opzioni;
   const context = await browser.newContext();
   const page = await context.newPage();
 
@@ -58,14 +59,29 @@ export async function scansionaPagina(browser, url, opzioni = {}) {
       }));
     }
 
+    // Il reflow ridimensiona la finestra e inietta CSS: va per ultimo,
+    // quando nessun altro controllo deve più guardare la pagina com'era.
+    let daReflow = { violazioni: [], statistiche: null };
+    if (reflow) {
+      daReflow = await verificaReflow(page, opzioni).catch(() => ({
+        violazioni: [],
+        statistiche: null,
+      }));
+    }
+
     return {
       url,
       urlFinale: page.url(),
       stato: stato ?? null,
       titolo,
       lingua: await page.getAttribute('html', 'lang'),
-      violazioni: normalizzaViolazioni([...risultati.violations, ...daTastiera.violazioni]),
+      violazioni: normalizzaViolazioni([
+        ...risultati.violations,
+        ...daTastiera.violazioni,
+        ...daReflow.violazioni,
+      ]),
       tastiera: daTastiera.statistiche,
+      reflow: daReflow.statistiche,
       // axe segnala come "incomplete" i controlli che non è riuscito a
       // decidere da solo: tipicamente il contrasto su sfondi con immagini o
       // gradienti. Non sono violazioni accertate, ma nemmeno esiti puliti:

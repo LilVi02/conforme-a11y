@@ -13,4 +13,6 @@ report-*/
 # script di servizio locali
 pubblica.sh
 aggiorna.sh
+togli-report.sh
+pulisci-cronologia.sh
 siti-test.txt

@@ -70,6 +70,19 @@ export function reportMarkdown(esito, opzioni = {}) {
     righe.push(``);
   }
 
+  if (r.reflow) {
+    const f = r.reflow;
+    righe.push(
+      `*Prova di reflow:* la finestra è stata ridotta a 320 px — l'equivalente di uno zoom al 400% — ` +
+        `e poi è stata applicata la spaziatura del testo prevista dalla norma. ` +
+        `${f.conScorrimento === 0 ? 'Nessuna pagina produce scorrimento orizzontale' : `${f.conScorrimento} pagina/e su ${f.pagine} producono scorrimento orizzontale, fino a ${f.scorrimentoMax} px`}; ` +
+        `${f.tagliatiDallaSpaziatura === 0 ? 'nessun contenitore taglia il testo con più spaziatura' : `${f.tagliatiDallaSpaziatura} contenitore/i tagliano il testo con più spaziatura`}. ` +
+        `Resta da guardare a occhio se il layout ricalcolato sia ancora comprensibile: ` +
+        `una pagina può non scorrere in orizzontale e avere comunque il menu che copre il contenuto.`
+    );
+    righe.push(``);
+  }
+
   if (r.pagineInErrore) {
     righe.push(`### Pagine non raggiunte`);
     righe.push(``);

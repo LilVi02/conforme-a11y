@@ -49,9 +49,19 @@ Quando il focus resta chiuso dentro un contenitore — il caso tipico è il bann
 
 Il limite del metodo va detto: osserva fatti meccanici, non usabilità. Sa dire che un elemento riceve il focus, non che l'indicatore sia percepibile; sa dire che nessun elemento è irraggiungibile, non che il percorso di acquisto si completi. Sposta questi criteri da "non verificabile" a "parzialmente verificato".
 
+## Reflow, zoom e spaziatura
+
+Altre tre prove che axe non può fare, perché richiedono di ridimensionare la finestra e di modificare gli stili.
+
+La finestra viene portata a 320 px di larghezza — l'equivalente di uno zoom al 400% — e si misura se compare scorrimento orizzontale, risalendo agli elementi che lo causano. Tabelle, immagini e blocchi preformattati finiscono in una voce separata: le WCAG ammettono l'eccezione per i contenuti che richiedono davvero una disposizione bidimensionale, quindi vanno valutati invece che accusati.
+
+Poi viene applicata la spaziatura prevista dal criterio 1.4.12 — interlinea 1.5, spazio fra paragrafi 2em, fra lettere 0.12em, fra parole 0.16em — e si guarda quali contenitori iniziano a tagliare il testo. Gli elementi già tagliati prima non vengono attribuiti alla spaziatura: sono un altro problema.
+
+Anche qui il limite è dichiarato: si misura se il contenuto scorre o viene tagliato, non se il layout ricalcolato resti comprensibile. Una pagina può non produrre scorrimento orizzontale e avere comunque il menu che copre il contenuto.
+
 ## Quanto copre
 
-Dei 50 criteri WCAG 2.1 di livello A e AA, l'analisi automatica ne verifica pienamente 4, ne intercetta parzialmente 17 e sui restanti 29 non è in grado di pronunciarsi.
+Dei 50 criteri WCAG 2.1 di livello A e AA, l'analisi automatica ne verifica pienamente 4, ne intercetta parzialmente 19 e sui restanti 27 non è in grado di pronunciarsi.
 
 Un report privo di errori non attesta quindi la conformità, e il report stesso lo dichiara in apertura. Insieme ai problemi rilevati viene sempre prodotta la checklist delle 14 verifiche manuali che coprono i criteri restanti, con i tempi stimati.
 
@@ -129,6 +139,7 @@ const esito = { dataScansione: new Date().toISOString(), pagine, riepilogo: riep
 src/wcag-it.js       i 50 criteri: titolo ufficiale, impatto, correzione, automatizzabilità
 src/regole-it.js     le regole axe, con descrizione e correzione specifica
 src/tastiera.js      la prova da tastiera, pilotando il browser
+src/reflow.js        reflow a 320 px e spaziatura del testo
 src/manuale.js       le 14 verifiche manuali, collegate ai criteri che coprono
 src/dichiarazione.js scheda preparatoria e distinzione fra i due regimi
 src/argomenti.js     argomenti da riga di comando
@@ -138,7 +149,7 @@ src/report.js        Markdown e JSON
 src/cli.js           entry point
 ```
 
-`scan.js`, `tastiera.js` e `cli.js` sono gli unici moduli legati al browser. Il resto funziona senza browser, e un test lo verifica.
+`scan.js`, `tastiera.js`, `reflow.js` e `cli.js` sono gli unici moduli legati al browser. Il resto funziona senza browser, e un test lo verifica.
 
 ## Test
 
@@ -146,7 +157,7 @@ src/cli.js           entry point
 npm test
 ```
 
-64 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
+71 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
 
 ## Provenienza dei contenuti
 

@@ -549,6 +549,67 @@ test('la checklist non chiede di rifare ciò che è già stato verificato', () =
   assert.match(v.come, /si vede davvero/);
 });
 
+console.log('\nReflow e spaziatura');
+
+test('le regole di reflow hanno descrizione e correzione', () => {
+  for (const r of ['reflow-scorrimento-orizzontale','reflow-da-valutare','spaziatura-testo-tagliato']) {
+    assert.ok(REGOLE[r], r + ' non è definita');
+    assert.ok(REGOLE[r].correzione.length > 60, r + ': correzione troppo vaga');
+  }
+});
+
+test('le violazioni di reflow si agganciano ai criteri giusti', () => {
+  const casi = [
+    { id:'reflow-scorrimento-orizzontale', tags:['wcag21aa','wcag1410'], atteso:'1.4.10' },
+    { id:'spaziatura-testo-tagliato',      tags:['wcag21aa','wcag1412'], atteso:'1.4.12' },
+  ];
+  for (const c of casi) {
+    const [v] = normalizzaViolazioni([{ id:c.id, help:'x', tags:c.tags, nodes:[{target:['x'],html:'<x>'}] }]);
+    assert.equal(v.criteri[0].codice, c.atteso, c.id + ' mappa sul criterio sbagliato');
+    assert.ok(v.criteri[0].titolo);
+  }
+});
+
+test('reflow e spaziatura non sono più dichiarati non verificabili', () => {
+  assert.equal(CRITERI['1.4.10'].auto, 'parziale');
+  assert.equal(CRITERI['1.4.12'].auto, 'parziale');
+});
+
+test('il ridimensionamento del testo resta dichiarato non verificato', () => {
+  // 1.4.4 è il ridimensionamento del TESTO, che non proviamo: reflow e
+  // spaziatura sono altri due criteri. Dichiararlo coperto sarebbe falso.
+  assert.equal(CRITERI['1.4.4'].auto, 'no');
+});
+
+test('il riepilogo espone le statistiche di reflow', () => {
+  const r = riepiloga([
+    { url:'https://a.it', errore:null, violazioni:[], superati:20,
+      reflow:{ scorrimentoA320: 604, elementiSbordanti: 2, tagliatiDallaSpaziatura: 1 } },
+    { url:'https://b.it', errore:null, violazioni:[], superati:20,
+      reflow:{ scorrimentoA320: 0, elementiSbordanti: 0, tagliatiDallaSpaziatura: 0 } },
+  ]);
+  assert.equal(r.reflow.pagine, 2);
+  assert.equal(r.reflow.conScorrimento, 1);
+  assert.equal(r.reflow.scorrimentoMax, 604);
+  assert.equal(r.reflow.tagliatiDallaSpaziatura, 1);
+});
+
+test('il report racconta la prova di reflow e ne dichiara i limiti', () => {
+  const pg = [{ url:'https://a.it', errore:null, violazioni:[], superati:20,
+    reflow:{ scorrimentoA320: 604, elementiSbordanti: 2, tagliatiDallaSpaziatura: 1 } }];
+  const md = reportMarkdown({ dataScansione:new Date().toISOString(), pagine:pg, riepilogo:riepiloga(pg) }, { sito:'https://a.it' });
+  assert.match(md, /Prova di reflow/);
+  assert.match(md, /320 px/);
+  assert.match(md, /604 px/);
+  assert.match(md, /menu che copre il contenuto/);
+});
+
+test('la checklist dello zoom non chiede di rifare le misure', () => {
+  const v = VERIFICHE_MANUALI.find((x) => x.id === 'zoom-reflow');
+  assert.match(v.come, /ha già ridotto la finestra/);
+  assert.match(v.come, /ancora comprensibile/);
+});
+
 console.log('\nIndipendenza dal browser');
 
 test('nessun modulo sotto test tira dentro Playwright', () => {
@@ -556,7 +617,7 @@ test('nessun modulo sotto test tira dentro Playwright', () => {
   // importa lo scanner, che importa Playwright. Risultato: senza npm install
   // fallivano tutti, pur non avendo bisogno di un browser.
   // Solo scan.js e cli.js possono dipendere dal browser.
-  const consentiti = new Set(['scan.js', 'cli.js', 'tastiera.js']);
+  const consentiti = new Set(['scan.js', 'cli.js', 'tastiera.js', 'reflow.js']);
   for (const file of fs.readdirSync(new URL('../src/', import.meta.url))) {
     if (!file.endsWith('.js') || consentiti.has(file)) continue;
     const testo = fs.readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');

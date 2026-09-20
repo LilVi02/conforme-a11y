@@ -44,6 +44,21 @@ export const REGOLE = {
     correzione:
       'Inserisci come primo elemento del <body> un link che punti al contenuto: <a href="#main" class="salta">Vai al contenuto principale</a>, con <main id="main"> più avanti. Può restare fuori schermo finché non riceve il focus, ma non nascosto con display:none, che lo escluderebbe dalla tabulazione.',
   },
+  'reflow-scorrimento-orizzontale': {
+    descrizione: 'Scorrimento orizzontale a 320 px di larghezza',
+    correzione:
+      'Qualcosa ha una larghezza fissa che non si adatta. Cerca width in pixel sui contenitori, min-width troppo alti, tabelle o immagini senza max-width: 100%. Usa layout flessibili — flex con wrap, oppure grid con minmax — e imposta le larghezze in percentuale o con clamp(). Verifica anche che ci sia il meta viewport con width=device-width.',
+  },
+  'reflow-da-valutare': {
+    descrizione: 'Contenuti larghi che potrebbero rientrare nelle eccezioni',
+    correzione:
+      'Le WCAG ammettono lo scorrimento orizzontale per i contenuti che richiedono davvero una disposizione bidimensionale: tabelle di dati, mappe, diagrammi, codice preformattato. Se è uno di questi, va bene così, ma conviene racchiuderlo in un contenitore con overflow-x: auto e role="region" più un\'etichetta, così chi naviga da tastiera può scorrerlo. Se invece è solo un blocco disegnato largo, va reso flessibile.',
+  },
+  'spaziatura-testo-tagliato': {
+    descrizione: 'Il testo viene tagliato aumentando la spaziatura',
+    correzione:
+      'Il contenitore ha un\'altezza fissa che non lascia crescere il testo. Sostituisci height con min-height e togli overflow: hidden dove serve solo a nascondere il problema. Chi è dislessico o ipovedente aumenta interlinea e spaziatura con fogli di stile propri: se il layout non regge, quelle persone perdono del contenuto senza nemmeno accorgersene.',
+  },
   'area-alt': {
     descrizione: 'Aree delle mappe immagine senza testo alternativo',
     correzione: 'Ogni <area> dentro una <map> ha un attributo alt che ne descrive la destinazione.',
