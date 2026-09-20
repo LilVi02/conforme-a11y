@@ -2,7 +2,7 @@
  * Verifica di reflow, zoom e spaziatura del testo.
  *
  * Criteri coperti: 1.4.10 (ricalcolo del flusso), 1.4.12 (spaziatura del
- * testo) e in parte 1.4.4 (ridimensionamento del testo).
+ * testo) e 1.4.4 (ridimensionamento del testo).
  *
  * axe non può farlo: sono prove che richiedono di ridimensionare la finestra
  * e di modificare gli stili, poi guardare che cosa si rompe. Servono un
@@ -150,6 +150,7 @@ export async function verificaReflow(page, opzioni = {}) {
 
   let reflow = null;
   let tagliatiNuovi = [];
+  let tagliatiDalTesto = [];
 
   try {
     // ── 1.4.10 — nessuno scorrimento orizzontale a 320 px
@@ -194,6 +195,41 @@ export async function verificaReflow(page, opzioni = {}) {
           })),
         });
       }
+    }
+
+    // ── 1.4.4 — il testo ingrandito al 200% non deve essere tagliato
+    // Si ingrandisce SOLO il testo, non l'intera pagina: è esattamente ciò
+    // che chiede il criterio, ed è diverso dallo zoom del browser.
+    await page.setViewportSize(viewportIniziale || { width: 1280, height: 720 });
+    await page.waitForTimeout(attesaRiflusso);
+
+    const tagliatiPrimaZoom = await page.evaluate(`(${TROVA_TAGLIATI.toString()})()`);
+    const chiaviPrimaZoom = new Set(tagliatiPrimaZoom.map((t) => t.chiave));
+
+    const stileZoom = await page.addStyleTag({
+      content: 'html { font-size: 200% !important; }',
+    });
+    await page.waitForTimeout(attesaRiflusso);
+
+    const tagliatiDopoZoom = await page.evaluate(`(${TROVA_TAGLIATI.toString()})()`);
+    tagliatiDalTesto = tagliatiDopoZoom.filter((t) => !chiaviPrimaZoom.has(t.chiave));
+
+    // Si toglie lo stile: la prova successiva deve partire pulita.
+    await page.evaluate((el) => el && el.remove(), stileZoom).catch(() => {});
+    await page.waitForTimeout(200);
+
+    if (tagliatiDalTesto.length) {
+      violazioni.push({
+        id: 'testo-ingrandito-tagliato',
+        help: 'Il testo ingrandito al 200% viene tagliato',
+        impact: 'serious',
+        tags: ['wcag2aa', 'wcag144'],
+        nodes: tagliatiDalTesto.slice(0, 10).map((e) => ({
+          target: [e.etichetta],
+          html: e.html,
+          failureSummary: `Portando il testo al 200% — cosa che chi ha ipovisione fa abitualmente — il contenuto di questo elemento passa da ${e.altezzaVisibile} a ${e.altezzaReale} px e viene tagliato${e.altezzaFissa ? ', perché il contenitore ha un\'altezza fissa' : ''}. Nota che questo è l'ingrandimento del solo testo, diverso dallo zoom della pagina.`,
+        })),
+      });
     }
 
     // ── 1.4.12 — la spaziatura del testo non deve rompere il layout
@@ -242,6 +278,7 @@ export async function verificaReflow(page, opzioni = {}) {
           scorrimentoA320: Math.max(0, reflow.scorrimento),
           elementiSbordanti: reflow.totale,
           tagliatiDallaSpaziatura: tagliatiNuovi.length,
+          tagliatiDalTestoIngrandito: tagliatiDalTesto.length,
         }
       : null,
   };

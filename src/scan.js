@@ -11,9 +11,13 @@
 
 import { chromium } from 'playwright';
 import { AxeBuilder } from '@axe-core/playwright';
-import { normalizzaViolazioni, riepiloga } from './aggrega.js';
+import { normalizzaViolazioni, riepiloga, separaIncerte } from './aggrega.js';
 import { verificaTastiera } from './tastiera.js';
 import { verificaReflow } from './reflow.js';
+import { RACCOGLITORE, leggiAscoltatori } from './ascoltatori.js';
+import { verificaMedia } from './media.js';
+import { verificaInterazione } from './interazione.js';
+import { verificaStruttura } from './struttura.js';
 
 const TAG_WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
@@ -24,11 +28,16 @@ const TAG_WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
  * @param {{timeout?: number, attesa?: number}} opzioni
  */
 export async function scansionaPagina(browser, url, opzioni = {}) {
-  const { timeout = 30000, attesa = 1000, tastiera = true, reflow = true } = opzioni;
+  const { timeout = 30000, attesa = 1000, tastiera = true, reflow = true, extra = true } = opzioni;
   const context = await browser.newContext();
   const page = await context.newPage();
 
   try {
+    // Va iniettato PRIMA del caricamento: gli ascoltatori dei framework e dei
+    // gestori di consenso si registrano nei primi millisecondi, e dopo non
+    // resterebbe traccia di loro.
+    if (extra) await page.addInitScript(RACCOGLITORE).catch(() => {});
+
     const risposta = await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
 
     // Una pagina di errore HTTP va scartata, non analizzata.
@@ -59,6 +68,21 @@ export async function scansionaPagina(browser, url, opzioni = {}) {
       }));
     }
 
+    // Controlli che leggono il documento e provano interazioni leggere.
+    // Vanno prima del reflow, che altera la finestra e gli stili.
+    let daMedia = { violazioni: [], statistiche: null };
+    let daInterazione = { violazioni: [], statistiche: null };
+    let daStruttura = { violazioni: [], statistiche: null };
+    if (extra) {
+      const ascoltatori = await leggiAscoltatori(page);
+      daMedia = await verificaMedia(page, ascoltatori).catch(() => ({ violazioni: [], statistiche: null }));
+      daStruttura = await verificaStruttura(page).catch(() => ({ violazioni: [], statistiche: null }));
+      daInterazione = await verificaInterazione(page, ascoltatori).catch(() => ({
+        violazioni: [],
+        statistiche: null,
+      }));
+    }
+
     // Il reflow ridimensiona la finestra e inietta CSS: va per ultimo,
     // quando nessun altro controllo deve più guardare la pagina com'era.
     let daReflow = { violazioni: [], statistiche: null };
@@ -69,24 +93,36 @@ export async function scansionaPagina(browser, url, opzioni = {}) {
       }));
     }
 
+    // I controlli che richiedono un giudizio non vanno fra le violazioni
+    // accertate: finiscono con i casi che axe non ha saputo risolvere.
+    const smistate = separaIncerte(
+      normalizzaViolazioni([
+        ...risultati.violations,
+        ...daTastiera.violazioni,
+        ...daMedia.violazioni,
+        ...daStruttura.violazioni,
+        ...daInterazione.violazioni,
+        ...daReflow.violazioni,
+      ])
+    );
+
     return {
       url,
       urlFinale: page.url(),
       stato: stato ?? null,
       titolo,
       lingua: await page.getAttribute('html', 'lang'),
-      violazioni: normalizzaViolazioni([
-        ...risultati.violations,
-        ...daTastiera.violazioni,
-        ...daReflow.violazioni,
-      ]),
+      violazioni: smistate.accertate,
       tastiera: daTastiera.statistiche,
       reflow: daReflow.statistiche,
+      media: daMedia.statistiche,
+      interazione: daInterazione.statistiche,
+      struttura: daStruttura.statistiche,
       // axe segnala come "incomplete" i controlli che non è riuscito a
       // decidere da solo: tipicamente il contrasto su sfondi con immagini o
       // gradienti. Non sono violazioni accertate, ma nemmeno esiti puliti:
       // vanno guardati da una persona, e quindi vanno riportati.
-      daVerificare: normalizzaViolazioni(risultati.incomplete),
+      daVerificare: [...normalizzaViolazioni(risultati.incomplete), ...smistate.incerte],
       superati: risultati.passes.length,
       errore: null,
       sospetto: rilevaPaginaSospetta(titolo, risultati.passes.length),

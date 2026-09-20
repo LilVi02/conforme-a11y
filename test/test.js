@@ -575,10 +575,12 @@ test('reflow e spaziatura non sono più dichiarati non verificabili', () => {
   assert.equal(CRITERI['1.4.12'].auto, 'parziale');
 });
 
-test('il ridimensionamento del testo resta dichiarato non verificato', () => {
-  // 1.4.4 è il ridimensionamento del TESTO, che non proviamo: reflow e
-  // spaziatura sono altri due criteri. Dichiararlo coperto sarebbe falso.
-  assert.equal(CRITERI['1.4.4'].auto, 'no');
+test('il ridimensionamento del testo è ora verificato', () => {
+  // Il criterio riguarda l'ingrandimento del SOLO testo, diverso dallo zoom
+  // della pagina: si prova portando html a font-size 200% e guardando cosa
+  // viene tagliato. Resta 'parziale' perché il taglio si misura, ma non si
+  // può giudicare se il risultato sia ancora leggibile.
+  assert.equal(CRITERI['1.4.4'].auto, 'parziale');
 });
 
 test('il riepilogo espone le statistiche di reflow', () => {
@@ -610,6 +612,61 @@ test('la checklist dello zoom non chiede di rifare le misure', () => {
   assert.match(v.come, /ancora comprensibile/);
 });
 
+console.log('\nControlli su media, interazione e struttura');
+
+test('tutte le nuove regole hanno descrizione e correzione', () => {
+  const nuove = [
+    'media-autoplay-sonoro','media-senza-alternative','tempo-ricaricamento-automatico',
+    'movimento-senza-pausa','orientamento-bloccato','azionamento-da-movimento',
+    'scorciatoie-da-verificare','azione-alla-pressione','gesti-senza-alternativa',
+    'cambio-contesto-al-focus','cambio-contesto-all-input','ordine-lettura-diverso',
+    'poche-vie-di-navigazione','testo-ingrandito-tagliato',
+  ];
+  for (const r of nuove) {
+    assert.ok(REGOLE[r], r + ' non è definita');
+    assert.ok(REGOLE[r].correzione.length > 80, r + ': correzione troppo vaga');
+  }
+});
+
+test('ogni nuova regola si aggancia al criterio WCAG corretto', () => {
+  const attesi = {
+    'media-autoplay-sonoro': ['wcag142', '1.4.2'],
+    'media-senza-alternative': ['wcag121', '1.2.1'],
+    'tempo-ricaricamento-automatico': ['wcag221', '2.2.1'],
+    'movimento-senza-pausa': ['wcag222', '2.2.2'],
+    'orientamento-bloccato': ['wcag134', '1.3.4'],
+    'azionamento-da-movimento': ['wcag254', '2.5.4'],
+    'scorciatoie-da-verificare': ['wcag214', '2.1.4'],
+    'azione-alla-pressione': ['wcag252', '2.5.2'],
+    'gesti-senza-alternativa': ['wcag251', '2.5.1'],
+    'cambio-contesto-al-focus': ['wcag321', '3.2.1'],
+    'cambio-contesto-all-input': ['wcag322', '3.2.2'],
+    'ordine-lettura-diverso': ['wcag132', '1.3.2'],
+    'poche-vie-di-navigazione': ['wcag245', '2.4.5'],
+    'testo-ingrandito-tagliato': ['wcag144', '1.4.4'],
+  };
+  for (const [regola, [tag, criterio]] of Object.entries(attesi)) {
+    const [v] = normalizzaViolazioni([{ id: regola, help: 'x', tags: ['wcag2a', tag], nodes: [{ target: ['x'], html: '<x>' }] }]);
+    assert.equal(v.criteri[0]?.codice, criterio, regola + ' mappa sul criterio sbagliato');
+    assert.ok(v.criteri[0]?.titolo, regola + ' non trova la scheda del criterio');
+  }
+});
+
+test('i criteri ora provati non sono più dichiarati non verificabili', () => {
+  for (const c of ['1.2.1','1.3.2','1.3.4','1.4.2','1.4.4','2.1.4','2.2.1','2.2.2','2.4.5','2.5.1','2.5.2','2.5.4','3.2.1','3.2.2']) {
+    assert.equal(CRITERI[c].auto, 'parziale', c + ' dovrebbe essere parziale');
+  }
+});
+
+test('restano dichiarati non verificabili solo quelli che lo sono davvero', () => {
+  // Qualità delle audiodescrizioni, linguaggio, testo dentro le immagini,
+  // lampeggio, coerenza fra pagine, giudizio sui messaggi di errore.
+  const nonVerificabili = CODICI.filter((c) => CRITERI[c].auto === 'no');
+  for (const c of ['1.2.3','1.2.4','1.2.5','1.3.3','1.4.5','2.3.1','3.3.1','3.3.3','3.3.4']) {
+    assert.ok(nonVerificabili.includes(c), c + ' non può essere dichiarato verificato');
+  }
+});
+
 console.log('\nIndipendenza dal browser');
 
 test('nessun modulo sotto test tira dentro Playwright', () => {
@@ -617,7 +674,7 @@ test('nessun modulo sotto test tira dentro Playwright', () => {
   // importa lo scanner, che importa Playwright. Risultato: senza npm install
   // fallivano tutti, pur non avendo bisogno di un browser.
   // Solo scan.js e cli.js possono dipendere dal browser.
-  const consentiti = new Set(['scan.js', 'cli.js', 'tastiera.js', 'reflow.js']);
+  const consentiti = new Set(['scan.js', 'cli.js', 'tastiera.js', 'reflow.js', 'media.js', 'interazione.js', 'struttura.js', 'ascoltatori.js']);
   for (const file of fs.readdirSync(new URL('../src/', import.meta.url))) {
     if (!file.endsWith('.js') || consentiti.has(file)) continue;
     const testo = fs.readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8');

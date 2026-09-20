@@ -52,7 +52,7 @@ export const CRITERI = {
     titolo: 'Solo audio e solo video (preregistrati)',
     livello: 'A',
     principio: 1,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Un podcast senza trascrizione esclude chi è sordo; un video muto senza descrizione esclude chi è cieco.',
     correzione:
@@ -114,7 +114,7 @@ export const CRITERI = {
     titolo: 'Sequenza significativa',
     livello: 'A',
     principio: 1,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Lo screen reader legge nell\'ordine del codice: se il CSS ha riordinato i blocchi, il discorso arriva scomposto.',
     correzione:
@@ -137,7 +137,7 @@ export const CRITERI = {
     titolo: 'Orientamento',
     livello: 'AA',
     principio: 1,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Chi ha la carrozzina con il tablet fissato in orizzontale non può ruotarlo: un sito che funziona solo in verticale lo esclude.',
     correzione:
@@ -170,7 +170,7 @@ export const CRITERI = {
     titolo: 'Controllo del sonoro',
     livello: 'A',
     principio: 1,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Un audio che parte da solo copre la voce dello screen reader e rende la pagina inutilizzabile.',
     correzione:
@@ -192,7 +192,7 @@ export const CRITERI = {
     titolo: 'Ridimensionamento del testo',
     livello: 'AA',
     principio: 1,
-    auto: 'no',
+    auto: 'parziale',
     impatto: 'Ingrandendo al 200% il testo si taglia, si sovrappone o sparisce.',
     correzione:
       'Unità relative (rem, em, %) per le dimensioni del testo. Niente altezze fisse sui contenitori di testo: usa min-height.',
@@ -281,7 +281,7 @@ export const CRITERI = {
     titolo: 'Tasti di scelta rapida',
     livello: 'A',
     principio: 2,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Scorciatoie a tasto singolo si attivano per sbaglio con il comando vocale o con un tremore, facendo partire azioni indesiderate.',
     correzione:
@@ -292,7 +292,7 @@ export const CRITERI = {
     titolo: 'Regolazione tempi di esecuzione',
     livello: 'A',
     principio: 2,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Chi compila un modulo più lentamente perde tutto quando la sessione scade senza preavviso.',
     correzione:
@@ -303,7 +303,7 @@ export const CRITERI = {
     titolo: 'Pausa, stop, nascondi',
     livello: 'A',
     principio: 2,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Caroselli e testi scorrevoli che non si fermano rendono impossibile leggere a chi ha bisogno di più tempo o si distrae facilmente.',
     correzione:
@@ -366,7 +366,7 @@ export const CRITERI = {
     titolo: 'Differenti modalità',
     livello: 'AA',
     principio: 2,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Chi fatica a navigare per menu non ha alternative per trovare una pagina.',
     correzione:
@@ -399,7 +399,7 @@ export const CRITERI = {
     titolo: 'Movimenti del puntatore',
     livello: 'A',
     principio: 2,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Gesti complessi — pizzicare, tracciare un percorso, trascinare — sono impossibili per chi ha difficoltà motorie.',
     correzione:
@@ -410,7 +410,7 @@ export const CRITERI = {
     titolo: 'Cancellazione delle azioni del puntatore',
     livello: 'A',
     principio: 2,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Chi ha tremori tocca per sbaglio e l\'azione parte comunque, senza possibilità di annullarla allontanando il dito.',
     correzione:
@@ -432,7 +432,7 @@ export const CRITERI = {
     titolo: 'Azionamento da movimento',
     livello: 'A',
     principio: 2,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Funzioni attivate scuotendo o inclinando il dispositivo escludono chi lo tiene fissato a un supporto, e scattano per sbaglio con i tremori.',
     correzione:
@@ -466,7 +466,7 @@ export const CRITERI = {
     titolo: 'Al focus',
     livello: 'A',
     principio: 3,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'Il solo arrivare su un campo con Tab fa cambiare la pagina: chi naviga da tastiera perde l\'orientamento.',
     correzione: 'Ricevere il focus non deve mai cambiare il contesto: niente aperture o invii automatici al focus.',
@@ -476,7 +476,7 @@ export const CRITERI = {
     titolo: 'All\'input',
     livello: 'A',
     principio: 3,
-    auto: 'no',
+    auto: 'parziale',
     impatto:
       'La pagina si ricarica o si invia da sola mentre si compila un campo: chi usa screen reader o ingranditore si perde.',
     correzione:

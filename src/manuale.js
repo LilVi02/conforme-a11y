@@ -56,7 +56,7 @@ export const VERIFICHE_MANUALI = [
     criteri: ['1.3.2', '2.4.3'],
     titolo: 'Verificare l\'ordine di lettura',
     come:
-      'Disattiva i CSS della pagina (nei browser: Visualizza → Stile pagina → Nessuno, oppure un\'estensione). Il contenuto deve restare comprensibile e nell\'ordine giusto.',
+      'Conforme ha già confrontato l\'ordine del codice con la posizione a schermo dentro i contenitori flex e grid, che sono il meccanismo con cui il CSS riordina i blocchi. Resta da leggere: disattiva i CSS della pagina (Visualizza → Stile pagina → Nessuno, o un\'estensione) e verifica che il discorso resti comprensibile. Un ordine formalmente corretto può comunque non avere senso.',
     seFallisce: 'Un layout che riordina i blocchi in CSS lascia il discorso scomposto a chi ascolta.',
     tempo: '10 min',
   },
@@ -83,7 +83,7 @@ export const VERIFICHE_MANUALI = [
     criteri: ['2.2.2', '2.3.1', '1.4.2', '2.2.1'],
     titolo: 'Movimento, suono e limiti di tempo',
     come:
-      'Caroselli, animazioni, video in autoplay, countdown, sessioni che scadono. Ogni movimento che dura più di 5 secondi si può fermare? Nulla lampeggia più di tre volte al secondo? L\'audio non parte da solo? Il sito rispetta prefers-reduced-motion?',
+      'Conforme ha già cercato audio e video che partono da soli, animazioni senza fine prive di un comando di pausa e ricaricamenti automatici: quei risultati sono fra i problemi qui sopra. Resta il lampeggio, che richiede di guardare: nulla deve lampeggiare più di tre volte al secondo, ed è l\'unico criterio che riguarda la salute e non la comodità. Verifica anche le sessioni che scadono — quanto preavviso danno, e se si possono prolungare — perché il tempo residuo non è leggibile dal codice.',
     seFallisce: 'Il lampeggio rapido è un rischio sanitario: ha la precedenza su tutto il resto.',
     tempo: '15 min',
   },
@@ -139,7 +139,7 @@ export const VERIFICHE_MANUALI = [
     criteri: ['1.3.4', '2.5.1', '2.5.2', '2.5.3', '2.5.4'],
     titolo: 'Gesti, tocco e orientamento su mobile',
     come:
-      'Il sito funziona sia in verticale sia in orizzontale? Le funzioni che richiedono di trascinare o pizzicare hanno un\'alternativa a tocco singolo? Le azioni si completano al rilascio, così da poterle annullare? Le etichette visibili corrispondono ai nomi usati dal comando vocale?',
+      'Conforme ha già cercato il blocco dell\'orientamento nei fogli di stile, gli elementi trascinabili, le azioni legate alla pressione e gli ascoltatori del movimento del dispositivo: dove ha trovato qualcosa lo ha segnalato, spesso fra i casi da valutare perché il codice non basta a decidere. Resta da provarlo davvero su un telefono: ruota lo schermo, prova le funzioni segnalate col solo tocco, verifica che le etichette visibili corrispondano ai nomi che useresti a voce.',
     seFallisce: 'Chi usa il tablet fissato alla carrozzina non può ruotarlo: il blocco dell\'orientamento lo esclude.',
     tempo: '20 min',
   },

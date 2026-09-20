@@ -8,6 +8,35 @@
 
 import { criteriDaTag, prioritaViolazione, scheda } from './wcag-it.js';
 
+/**
+ * Controlli che segnalano qualcosa da guardare, non una violazione accertata.
+ *
+ * Una tabella larga può essere un'eccezione legittima; una scorciatoia da
+ * tastiera può già usare un modificatore; un gestore su mousedown può servire
+ * solo a preparare un trascinamento. In tutti questi casi il codice non basta
+ * a decidere, e presentarli come colpe — per giunta etichettati "GRAVE" —
+ * farebbe perdere fiducia nel resto del report.
+ *
+ * Finiscono quindi nella stessa sezione dei controlli che axe non ha saputo
+ * risolvere, e non vengono conteggiati fra i problemi.
+ */
+export const REGOLE_DA_VALUTARE = new Set([
+  'reflow-da-valutare',
+  'scorciatoie-da-verificare',
+  'azione-alla-pressione',
+  'gesti-senza-alternativa',
+]);
+
+/** Divide le violazioni accertate da quelle che richiedono un giudizio. */
+export function separaIncerte(violazioni = []) {
+  const accertate = [];
+  const incerte = [];
+  for (const v of violazioni) {
+    (REGOLE_DA_VALUTARE.has(v.regola) ? incerte : accertate).push(v);
+  }
+  return { accertate, incerte };
+}
+
 /** Arricchisce le violazioni grezze di axe con la scheda normativa italiana. */
 export function normalizzaViolazioni(lista = []) {
   return lista.map((v) => {

@@ -59,9 +59,29 @@ Poi viene applicata la spaziatura prevista dal criterio 1.4.12 — interlinea 1.
 
 Anche qui il limite è dichiarato: si misura se il contenuto scorre o viene tagliato, non se il layout ricalcolato resti comprensibile. Una pagina può non produrre scorrimento orizzontale e avere comunque il menu che copre il contenuto.
 
+## Gli altri controlli
+
+Diversi criteri dipendono da come la pagina si comporta, non da come è scritta, e dal DOM non si vedono. Conforme li ricava osservando il documento e provando interazioni leggere.
+
+Prima del caricamento viene sostituito `addEventListener`, così resta traccia di quali eventi la pagina ascolta: è l'unico modo per sapere che esistono scorciatoie da tastiera globali, azioni legate alla pressione invece che al rilascio, o funzioni attivate scuotendo il dispositivo. Gli attributi non ne conservano memoria e `getEventListeners` esiste solo negli strumenti di sviluppo.
+
+Dal documento si leggono poi gli audio che partono da soli, le animazioni senza fine prive di un comando di pausa, il blocco dell'orientamento nei fogli di stile, i media senza sottotitoli né trascrizione, e le vie disponibili per raggiungere le pagine.
+
+Due prove richiedono di agire: si dà il focus a ogni campo e se ne cambia il valore, per vedere se la pagina naviga o invia da sola. I tentativi vengono intercettati e annullati, e i moduli che sembrano fare cose serie — pagamenti, cancellazioni — non vengono toccati affatto.
+
+Infine si confronta l'ordine del codice con la posizione a schermo dentro i contenitori flex e grid, che è il meccanismo con cui il CSS riordina davvero i blocchi.
+
+## Cosa è accertato e cosa va guardato
+
+Alcuni di questi controlli trovano fatti certi: un `autoplay` senza `muted` è una violazione, non un'opinione. Altri trovano indizi che il codice non basta a giudicare — una tabella larga può essere un'eccezione legittima, una scorciatoia può già usare un modificatore, un gestore su `mousedown` può servire solo a preparare un trascinamento.
+
+I secondi non compaiono fra i problemi. Finiscono in una sezione separata insieme ai controlli che axe non ha saputo risolvere, e non vengono conteggiati. Presentarli come colpe, per giunta etichettati "grave", farebbe perdere fiducia nel resto del report.
+
 ## Quanto copre
 
-Dei 50 criteri WCAG 2.1 di livello A e AA, l'analisi automatica ne verifica pienamente 4, ne intercetta parzialmente 19 e sui restanti 27 non è in grado di pronunciarsi.
+Dei 50 criteri WCAG 2.1 di livello A e AA, l'analisi automatica ne verifica pienamente 4, ne intercetta parzialmente 33 e sui restanti 13 non è in grado di pronunciarsi.
+
+I tredici che restano fuori sono quelli che richiedono di capire, non di misurare: la qualità delle audiodescrizioni, le istruzioni che si affidano a forma e posizione, il testo dentro le immagini, il lampeggio, la coerenza fra pagine diverse, e il giudizio sui messaggi di errore.
 
 Un report privo di errori non attesta quindi la conformità, e il report stesso lo dichiara in apertura. Insieme ai problemi rilevati viene sempre prodotta la checklist delle 14 verifiche manuali che coprono i criteri restanti, con i tempi stimati.
 
@@ -139,7 +159,11 @@ const esito = { dataScansione: new Date().toISOString(), pagine, riepilogo: riep
 src/wcag-it.js       i 50 criteri: titolo ufficiale, impatto, correzione, automatizzabilità
 src/regole-it.js     le regole axe, con descrizione e correzione specifica
 src/tastiera.js      la prova da tastiera, pilotando il browser
-src/reflow.js        reflow a 320 px e spaziatura del testo
+src/reflow.js        reflow a 320 px, testo al 200%, spaziatura
+src/ascoltatori.js   registra quali eventi la pagina ascolta
+src/media.js         audio, animazioni, orientamento, movimento
+src/interazione.js   puntatore, scorciatoie, cambi di contesto
+src/struttura.js     ordine di lettura, vie di navigazione
 src/manuale.js       le 14 verifiche manuali, collegate ai criteri che coprono
 src/dichiarazione.js scheda preparatoria e distinzione fra i due regimi
 src/argomenti.js     argomenti da riga di comando
@@ -149,7 +173,7 @@ src/report.js        Markdown e JSON
 src/cli.js           entry point
 ```
 
-`scan.js`, `tastiera.js`, `reflow.js` e `cli.js` sono gli unici moduli legati al browser. Il resto funziona senza browser, e un test lo verifica.
+I moduli che pilotano il browser sono `scan.js`, `tastiera.js`, `reflow.js`, `media.js`, `interazione.js`, `struttura.js`, `ascoltatori.js` e `cli.js`. Il resto funziona senza browser, e un test lo verifica.
 
 ## Test
 
@@ -157,7 +181,7 @@ src/cli.js           entry point
 npm test
 ```
 
-71 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
+75 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
 
 ## Provenienza dei contenuti
 

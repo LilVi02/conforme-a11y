@@ -59,6 +59,86 @@ export const REGOLE = {
     correzione:
       'Il contenitore ha un\'altezza fissa che non lascia crescere il testo. Sostituisci height con min-height e togli overflow: hidden dove serve solo a nascondere il problema. Chi è dislessico o ipovedente aumenta interlinea e spaziatura con fogli di stile propri: se il layout non regge, quelle persone perdono del contenuto senza nemmeno accorgersene.',
   },
+  'media-autoplay-sonoro': {
+    descrizione: 'Audio che parte automaticamente',
+    correzione:
+      'Togli l\'attributo autoplay, oppure aggiungi muted se il video deve partire comunque. Se il suono serve, mettilo dietro un pulsante: il criterio ammette la riproduzione automatica solo entro 3 secondi, o con un comando per fermarla indipendente dal volume di sistema.',
+  },
+  'media-senza-alternative': {
+    descrizione: 'Media senza sottotitoli né trascrizione',
+    correzione:
+      'Per i video con parlato aggiungi <track kind="captions" srclang="it" src="…">. Per i contenuti solo audio serve una trascrizione testuale, che può stare accanto al player o dietro un link chiaramente etichettato. I sottotitoli generati automaticamente e non revisionati non soddisfano il criterio.',
+  },
+  'tempo-ricaricamento-automatico': {
+    descrizione: 'La pagina si ricarica da sola',
+    correzione:
+      'Togli il meta refresh. Se il contenuto deve aggiornarsi, fallo aggiornare da un pulsante, oppure avvisa prima della scadenza e offri la possibilità di prolungare. Un ricaricamento imprevisto fa perdere il segno a chi legge lentamente e il lavoro a chi sta compilando un modulo.',
+  },
+  'movimento-senza-pausa': {
+    descrizione: 'Movimento continuo senza un comando per fermarlo',
+    correzione:
+      'Aggiungi un pulsante che metta in pausa il movimento, con un\'etichetta esplicita. Rispettare prefers-reduced-motion è buona pratica ma non basta: la norma chiede un comando raggiungibile nella pagina. In alternativa, fai durare l\'animazione meno di 5 secondi.',
+  },
+  'orientamento-bloccato': {
+    descrizione: 'Il contenuto è nascosto in uno dei due orientamenti',
+    correzione:
+      'Togli la regola che nasconde o ruota il contenuto in base all\'orientamento. Il sito deve funzionare sia in verticale sia in orizzontale, salvo i casi in cui un orientamento è essenziale — un pianoforte virtuale, per dire. Chi ha il dispositivo fissato a un supporto non può girarlo.',
+  },
+  'azionamento-da-movimento': {
+    descrizione: 'Funzioni attivate muovendo il dispositivo',
+    correzione:
+      'Ogni funzione attivata scuotendo o inclinando il dispositivo deve avere un comando equivalente nell\'interfaccia, e deve potersi disattivare. Chi ha tremori la fa partire senza volerlo; chi tiene il dispositivo su un supporto non può usarla affatto.',
+  },
+  'scorciatoie-da-verificare': {
+    descrizione: 'Scorciatoie da tastiera attive su tutta la pagina',
+    correzione:
+      'Le scorciatoie a carattere singolo devono poter essere disattivate, rimappate, oppure valere solo quando il componente ha il focus. Chi usa il comando vocale le fa scattare parlando, chi ha tremori premendo per sbaglio. Se le tue usano già un modificatore come Ctrl o Alt, va bene così.',
+  },
+  'azione-alla-pressione': {
+    descrizione: 'Azioni che partono alla pressione invece che al rilascio',
+    correzione:
+      'Sposta l\'azione da mousedown o pointerdown all\'evento click, oppure a pointerup. Così chi tocca per sbaglio può allontanare il dito e annullare. Se l\'evento sulla pressione serve solo a preparare qualcosa — evidenziare, iniziare un trascinamento — e l\'azione vera avviene al rilascio, il criterio è rispettato.',
+  },
+  'gesti-senza-alternativa': {
+    descrizione: 'Funzioni basate su trascinamento o gesti complessi',
+    correzione:
+      'Ogni funzione che richiede di tracciare un percorso, pizzicare o trascinare deve avere un\'alternativa a tocco singolo: pulsanti per spostare, un campo dove digitare il valore, comandi espliciti. Chi ha difficoltà motorie non riesce a compiere gesti precisi.',
+  },
+  'cambio-contesto-al-focus': {
+    descrizione: 'La pagina cambia solo arrivando su un campo',
+    correzione:
+      'Ricevere il focus non deve mai cambiare il contesto. Togli le aperture di finestre e gli invii legati all\'evento focus: chi naviga da tastiera attraversa i campi per leggerli, e non si aspetta che succeda qualcosa.',
+  },
+  'cambio-contesto-all-input': {
+    descrizione: 'La pagina cambia da sola quando si scrive o si sceglie',
+    correzione:
+      'Il caso più frequente è il menu a tendina che invia il modulo con onchange: chi lo attraversa con le frecce fa partire la prima voce. Aggiungi un pulsante di invio esplicito. Se serve aggiornare qualcosa senza ricaricare, annuncialo in una regione con aria-live invece di cambiare pagina.',
+  },
+  'ordine-lettura-diverso': {
+    descrizione: 'L\'ordine del codice non corrisponde a quello visivo',
+    correzione:
+      'Riordina gli elementi nel codice HTML invece che con il CSS, e togli le proprietà order o grid-area che li spostano. Chi usa uno screen reader riceve la pagina nell\'ordine del codice: se non coincide con quello visivo, il discorso arriva scomposto. Si verifica anche disattivando i CSS e rileggendo.',
+  },
+  'poche-vie-di-navigazione': {
+    descrizione: 'Un solo modo per raggiungere le pagine',
+    correzione:
+      'Servono almeno due vie fra: un menu di navigazione, una ricerca interna, una mappa del sito, le briciole di pane. Chi fatica a orientarsi in un menu a più livelli deve poter arrivare altrimenti. Il criterio non si applica alle pagine che sono un passaggio di un processo, come i passi di un acquisto.',
+  },
+  'testo-ingrandito-tagliato': {
+    descrizione: 'Il testo ingrandito al 200% viene tagliato',
+    correzione:
+      'Sostituisci le altezze fisse con min-height e usa unità relative (rem, em) per le dimensioni del testo. Questo è l\'ingrandimento del solo testo, che è cosa diversa dallo zoom della pagina: molti layout reggono il secondo e si rompono sul primo.',
+  },
+  'no-autoplay-audio': {
+    descrizione: 'Elementi audio o video che partono da soli',
+    correzione:
+      'Togli autoplay, oppure aggiungi muted. axe non riesce a stabilire la durata del suono e lascia il giudizio: la norma ammette la riproduzione automatica solo entro 3 secondi, o con un comando per fermarla.',
+  },
+  'aria-prohibited-attr': {
+    descrizione: 'Attributi ARIA non ammessi su questo elemento',
+    correzione:
+      'Alcuni attributi ARIA non valgono sull\'elemento o sul ruolo in cui si trovano e vengono ignorati. Il caso più frequente è aria-label su un <div> senza ruolo: dagli un role adeguato, oppure usa un elemento che accetti un nome accessibile.',
+  },
   'area-alt': {
     descrizione: 'Aree delle mappe immagine senza testo alternativo',
     correzione: 'Ogni <area> dentro una <map> ha un attributo alt che ne descrive la destinazione.',
