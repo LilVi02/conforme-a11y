@@ -12,7 +12,8 @@
   },
   "scripts": {
     "start": "node src/cli.js",
-    "test": "node test/test.js"
+    "test": "node test/test.js",
+    "test:browser": "node test/browser.js"
   },
   "engines": {
     "node": ">=18"

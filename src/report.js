@@ -18,6 +18,69 @@ const ETICHETTA_PRIORITA = {
   3: 'DA SISTEMARE — attrito',
 };
 
+/**
+ * Descrive in una riga da dove arriva un problema.
+ *
+ * Restituisce null quando tutto viene dal sito: è il caso normale, e scriverlo
+ * ogni volta aggiungerebbe rumore senza aggiungere nulla.
+ */
+export function descriviProvenienza(origine, { accertato = true } = {}) {
+  if (!origine || origine.tutteDalSito || !origine.componenti?.length) return null;
+
+  const elenco = origine.componenti
+    .map((c) => {
+      const come = c.certezza === 'certa' ? '' : ', riconosciuto dal nome nel codice';
+      return `**${c.nome}**${c.tipo ? ` (${c.tipo})` : ''}${come}`;
+    })
+    .join(', ');
+
+  // Fra i casi da guardare non è ancora detto che ci sia qualcosa da
+  // correggere: dire "non si corregge modificando il sito" darebbe per
+  // assodato proprio ciò che quella sezione lascia in sospeso. La distinzione
+  // fra accertato e da valutare è il cardine del report, e una frase
+  // riutilizzata tale e quale la cancellava.
+  const rimedio = accertato
+    ? 'Non si corregge modificando il sito:'
+    : 'Se c\'è qualcosa da correggere, non si corregge modificando il sito:';
+
+  if (origine.tutteDaTerzi) {
+    return `non dal codice del sito, ma da ${elenco}. ${rimedio} si interviene sulle impostazioni del componente, lo si aggiorna, se ne chiede la correzione al fornitore o lo si sostituisce.`;
+  }
+
+  const n = origine.daTerzi;
+  const chiusa = accertato
+    ? 'Le altre sono nel codice del sito, e le due metà si correggono in modi diversi.'
+    : 'Le altre sono nel codice del sito: se risultassero da correggere, le due metà richiedono interventi diversi.';
+  return `in parte da ${elenco}: ${n === 1 ? 'una occorrenza' : `${n} occorrenze`} su ${origine.totale}. ${chiusa}`;
+}
+
+/**
+ * Quando una voce della checklist promette più di quanto la scansione abbia
+ * fatto davvero, restituisce la frase che la smentisce.
+ *
+ * Le voci sono scritte una volta per tutte e dicono "Conforme ha già
+ * verificato che…". È vero quando i controlli riescono, e falso quando si
+ * fermano: in quel caso il testo rassicura su un lavoro non svolto, proprio
+ * dove serviva il contrario.
+ */
+export function smentisciVerifica(id, r) {
+  if (id !== 'tastiera' || !r?.tastiera) return null;
+  const t = r.tastiera;
+  if (t.percorsiCompleti >= t.pagine) return null;
+
+  const fermate = t.pagine - t.percorsiCompleti;
+  const dove =
+    t.pagine === 1
+      ? 'sull\'unica pagina analizzata'
+      : `su ${fermate} pagina/e su ${t.pagine}`;
+  return (
+    `Il percorso con Tab non è arrivato in fondo ${dove}` +
+    `${t.percorsiFermatiInUnContenitore ? ' — si è fermato dentro un contenitore, di solito un banner di consenso o una finestra modale' : ''}. ` +
+    `${t.pagine === 1 ? 'Lì' : 'Su quelle pagine'} Conforme non ha verificato né la raggiungibilità degli elementi, né l'indicatore di focus, né la presenza del link di salto al contenuto: ` +
+    `questa voce va svolta per intero, non come ripasso.`
+  );
+}
+
 const dataIt = (iso) =>
   new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
 
@@ -45,13 +108,26 @@ export function reportMarkdown(esito, opzioni = {}) {
   righe.push(`|---|---|`);
   righe.push(`| Problemi distinti rilevati | ${r.problemiDistinti} |`);
   righe.push(`| Di cui bloccanti | ${r.bloccanti} |`);
+  // Questo conteggio e la tabella dei componenti in fondo devono tornare:
+  // una prima versione contava qui i soli problemi accertati e là anche i casi
+  // da guardare, e il lettore trovava due numeri diversi per la stessa cosa.
+  if (r.problemiDaTerzi || r.daVerificareDaTerzi) {
+    const parti = [];
+    if (r.problemiDaTerzi) parti.push(`${r.problemiDaTerzi} problemi`);
+    if (r.daVerificareDaTerzi) parti.push(`${r.daVerificareDaTerzi} casi da guardare`);
+    righe.push(`| Con occorrenze da componenti di terze parti | ${parti.join(' e ')} |`);
+  }
   righe.push(`| Occorrenze totali nel codice | ${r.occorrenzeTotali} |`);
   if (r.occorrenzeDaVerificare) {
-    righe.push(`| Casi che axe non ha saputo decidere | ${r.occorrenzeDaVerificare} |`);
+    righe.push(`| Casi che richiedono un giudizio umano | ${r.occorrenzeDaVerificare} |`);
   }
   righe.push(`| Controlli superati | ${r.controlliSuperati ?? 0} |`);
-  righe.push(`| Criteri verificabili in automatico | ${COPERTURA.automatici} su ${COPERTURA.totale} |`);
-  righe.push(`| Criteri che richiedono verifica umana | ${COPERTURA.manuali + COPERTURA.parziali} su ${COPERTURA.totale} |`);
+  // Tre righe invece di una: dire "46 criteri richiedono verifica umana"
+  // accanto a "33 intercettati parzialmente" sembrava una contraddizione,
+  // perché i due numeri contano cose diverse. Separarli toglie l'ambiguità.
+  righe.push(`| Criteri verificati per intero in automatico | ${COPERTURA.automatici} su ${COPERTURA.totale} |`);
+  righe.push(`| Criteri intercettati solo in parte | ${COPERTURA.parziali} su ${COPERTURA.totale} |`);
+  righe.push(`| Criteri fuori dalla portata di un controllo automatico | ${COPERTURA.manuali} su ${COPERTURA.totale} |`);
   righe.push(``);
   righe.push(`Indicazione preliminare, dai soli dati automatici: **${statoSuggerito(r)}**.`);
   righe.push(``);
@@ -62,8 +138,21 @@ export function reportMarkdown(esito, opzioni = {}) {
       `*Prova da tastiera:* la pagina è stata percorsa premendo Tab. ` +
         `${t.elementiPercorsi} elementi raggiunti, ${t.focusControllati} indicatori di focus controllati, ` +
         `${t.trappole === 0 ? 'nessuna trappola' : `${t.trappole} trappola/e`}, ` +
-        `${t.confinate ? `${t.confinate} pagina/e in cui il focus è rimasto chiuso in un contenitore, ` : ''}` +
-        `link di salto al contenuto presente su ${t.conSkipLink} pagina/e su ${t.pagine}. ` +
+        `${
+          t.percorsiFermatiInUnContenitore
+            ? `${t.percorsiFermatiInUnContenitore} pagina/e in cui il percorso si è fermato dentro un contenitore, `
+            : ''
+        }` +
+        // Il link di salto si può dire assente solo dove il percorso è arrivato
+        // in fondo. Dove si è fermato prima, "assente" significherebbe soltanto
+        // che non ci siamo passati.
+        `${
+          t.percorsiCompleti === 0
+            ? 'nessun percorso completato per intero, quindi sul link di salto al contenuto non si può dire nulla'
+            : t.conSkipLink === 0
+              ? `nessuna delle ${t.percorsiCompleti} pagina/e percorse per intero offre un link di salto al contenuto`
+              : `link di salto al contenuto presente su ${t.conSkipLink} delle ${t.percorsiCompleti} pagina/e percorse per intero`
+        }. ` +
         `Verifica i fatti meccanici, non l'usabilità: restano da controllare a mano i percorsi completi ` +
         `e la reale percepibilità dell'indicatore di focus.`
     );
@@ -148,6 +237,14 @@ export function reportMarkdown(esito, opzioni = {}) {
       // La correzione specifica della regola, quando esiste, è molto più utile
       // di quella del criterio: un criterio ampio come 1.3.1 copre problemi
       // diversissimi e il suo consiglio generico non aiuta a risolverne uno.
+      // Chi deve mettere mano al codice: è un'informazione diversa dalla
+      // gravità, e va prima della correzione perché la correzione cambia.
+      const provenienza = descriviProvenienza(p.origine);
+      if (provenienza) {
+        righe.push(`*Da dove arriva:* ${provenienza}`);
+        righe.push(``);
+      }
+
       const correzioneRegola = correggiRegola(p.regola);
       if (correzioneRegola) {
         righe.push(`*Come si corregge:* ${correzioneRegola}`);
@@ -178,6 +275,13 @@ export function reportMarkdown(esito, opzioni = {}) {
         righe.push(``);
         for (const e of p.esempi.slice(0, 3)) {
           righe.push(`\`${e.selettore}\``);
+          // Un elemento dentro un iframe vive in un altro documento: il
+          // selettore da solo non lo trova, e non dirlo manda a cercare nel
+          // posto sbagliato.
+          if (e.dentroFrame?.length) {
+            righe.push(``);
+            righe.push(`Dentro l'iframe \`${e.dentroFrame.join(' ')}\`, quindi in un documento diverso dalla pagina.`);
+          }
           righe.push(``);
           righe.push('```html');
           righe.push(e.html);
@@ -193,16 +297,60 @@ export function reportMarkdown(esito, opzioni = {}) {
     }
   }
 
+  // ── Componenti di terze parti
+  //
+  // Compare solo se ce ne sono. È la sezione che risponde alla domanda "e
+  // questo chi lo sistema", che il resto del report lascia senza risposta.
+  if (r.componentiEsterni?.length) {
+    righe.push(`## Quello che non è nel codice del sito`);
+    righe.push(``);
+    righe.push(
+      `Parte delle segnalazioni non nasce dalle pagine, ma da componenti forniti da altri e incorporati nel sito. ` +
+        `Cambia chi deve intervenire, e come: un gestore del consenso si configura o si aggiorna, un modulo incorporato ` +
+        `si chiede al fornitore o si sostituisce. Nessuna di queste correzioni si fa aprendo il codice del sito.`
+    );
+    righe.push(``);
+    righe.push(`| Componente | Che cos'è | Segnalazioni | Occorrenze | Come è stato riconosciuto |`);
+    righe.push(`|---|---|---|---|---|`);
+    for (const c of r.componentiEsterni) {
+      const come =
+        c.certezza === 'certa'
+          ? 'documento servito da un altro dominio'
+          : 'nomi usati dal componente nel codice';
+      righe.push(`| ${c.nome} | ${c.tipo || '—'} | ${c.regole} | ${c.occorrenze} | ${come} |`);
+    }
+    righe.push(``);
+    righe.push(
+      `Il riconoscimento per nome è un'ipotesi molto probabile, non una certezza, e l'elenco dei componenti ` +
+        `conosciuti non è completo: un componente non riconosciuto viene attribuito al sito.`
+    );
+    righe.push(``);
+    const t = CONTESTO_NORMATIVO.contenutiDiTerzi;
+    righe.push(`**Questo non riduce l'obbligo.**`);
+    righe.push(``);
+    righe.push(
+      `Per i soggetti della Legge Stanca un'esclusione per i contenuti di terzi esiste. ${t.condizioni} ${t.conseguenza}`
+    );
+    righe.push(``);
+    righe.push(`${t.eaa} Stabilire quale posizione si applichi al proprio caso è una valutazione giuridica, e questo report non la sostituisce.`);
+    righe.push(``);
+    righe.push(`*Fonte:* ${t.fonte}`);
+    righe.push(``);
+  }
+
   // ── Casi che axe non ha saputo decidere
   if (r.daVerificare?.length) {
     righe.push(`## Da guardare: casi che il controllo automatico non ha saputo decidere`);
     righe.push(``);
     righe.push(
       `Non sono violazioni accertate, e per questo non compaiono sopra. Ma non sono ` +
-        `nemmeno esiti puliti: axe non è riuscito a stabilire se il criterio sia rispettato ` +
-        `e ha lasciato la decisione a una persona. Il caso più comune è il contrasto su ` +
-        `sfondi con immagini o gradienti, dove il colore effettivo dietro il testo non è ` +
-        `calcolabile dal codice. Vanno verificati a occhio.`
+        `nemmeno esiti puliti: il codice da solo non basta a decidere, e la decisione ` +
+        `resta a una persona. Il caso più comune è il contrasto su sfondi con immagini o ` +
+        `gradienti, dove il colore effettivo dietro il testo non è calcolabile. Ci finisce ` +
+        `anche ciò che dipende dall'intenzione — una tabella larga può essere un'eccezione ` +
+        `legittima, un gesto di trascinamento può servire solo a far scorrere la pagina — ` +
+        `e i controlli che non sono riusciti a completarsi, che è bene sapere. ` +
+        `Vanno guardati uno per uno.`
     );
     righe.push(``);
 
@@ -211,9 +359,25 @@ export function reportMarkdown(esito, opzioni = {}) {
       righe.push(``);
       righe.push(`Casi da controllare: ${p.occorrenze} su ${p.pagine.length} pagina/e · regola \`${p.regola}\``);
       righe.push(``);
+      // Anche qui va detto da dove arriva. Senza, la tabella dei componenti in
+      // fondo conta segnalazioni che il lettore non riesce a ritrovare: su
+      // comune.milano.it dichiarava quattro voci riconducibili a OneTrust e
+      // solo tre ne portavano l'indicazione.
+      const daDove = descriviProvenienza(p.origine, { accertato: false });
+      if (daDove) {
+        righe.push(`*Da dove arriva:* ${daDove}`);
+        righe.push(``);
+      }
       const cor = correggiRegola(p.regola);
       if (cor) {
-        righe.push(`*Se il problema c'è, si corregge così:* ${cor}`);
+        // Non tutte le voci di questa sezione sono "problemi possibili": una
+        // è un controllo che non si è completato, e per quella "se il problema
+        // c'è, si corregge così" introduce un testo che dice l'opposto.
+        righe.push(
+          p.regola === 'tastiera-percorso-interrotto'
+            ? `*Come completare la verifica:* ${cor}`
+            : `*Se il problema c'è, si corregge così:* ${cor}`
+        );
         righe.push(``);
       }
       if (p.esempi?.length) {
@@ -250,6 +414,16 @@ export function reportMarkdown(esito, opzioni = {}) {
     righe.push(``);
     righe.push(v.come);
     righe.push(``);
+    // Il testo della checklist dice "Conforme ha già verificato che…", ed è
+    // vero solo quando la verifica è riuscita. Su comune.milano.it il percorso
+    // con Tab si fermava dopo quattro elementi e la checklist continuava a
+    // dichiararlo svolto: chi legge salta la verifica più importante di tutte
+    // credendola già coperta a metà. Qui la scansione smentisce sé stessa.
+    const smentita = smentisciVerifica(v.id, r);
+    if (smentita) {
+      righe.push(`> ⚠️ **In questa scansione non è andata così.** ${smentita}`);
+      righe.push(``);
+    }
     if (v.seFallisce) {
       righe.push(`> ${v.seFallisce}`);
       righe.push(``);
@@ -280,6 +454,9 @@ export function reportMarkdown(esito, opzioni = {}) {
     righe.push(`- *Chi riguarda:* ${reg.soggetti}`);
     righe.push(`- *Dichiarazione:* ${reg.dichiarazione}`);
     righe.push(`- *Tempi:* ${reg.scadenza}`);
+    if (reg.riferimenti?.length) {
+      righe.push(`- *Riferimenti:* ${reg.riferimenti.join(' · ')}`);
+    }
     righe.push(``);
   }
   righe.push(`**Vigilanza:** ${CONTESTO_NORMATIVO.vigilanza}`);

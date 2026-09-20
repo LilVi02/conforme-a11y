@@ -646,6 +646,11 @@ export const CONTESTO_NORMATIVO = {
       dichiarazione:
         'Obbligatoria, e conforme solo se compilata sul modello online di AgID (form.agid.gov.it). Un documento redatto in proprio non soddisfa il requisito.',
       scadenza: 'Revisione e aggiornamento entro il 23 settembre di ogni anno.',
+      riferimenti: [
+        'Direttiva (UE) 2016/2102 — https://eur-lex.europa.eu/legal-content/IT/TXT/?uri=CELEX:32016L2102',
+        'AgID, Linee guida sull\'accessibilità degli strumenti informatici (PA) — https://www.agid.gov.it/it/design-servizi/accessibilita/linee-guida-accessibilita-pa',
+        'AgID, modello di dichiarazione di accessibilità — https://form.agid.gov.it/',
+      ],
     },
     {
       id: 'eaa',
@@ -653,11 +658,34 @@ export const CONTESTO_NORMATIVO = {
       soggetti:
         'Imprese che offrono al pubblico prodotti e servizi digitali, con l\'esclusione delle microimprese (meno di 10 dipendenti e fatturato annuo inferiore a 2 milioni di euro). Applicabile dal 28 giugno 2025.',
       dichiarazione:
-        'Le informazioni sull\'accessibilità sono obbligatorie, ma il formato AgID non lo è: si può usare una struttura diversa purché siano presenti i contenuti richiesti dalla norma.',
+        'Le informazioni sull\'accessibilità sono obbligatorie, ma il formato AgID non lo è: si può usare una struttura diversa purché siano presenti i contenuti richiesti dalla norma. Le Linee Guida AgID sull\'accessibilità dei servizi precisano che dal 28 giugno 2025 ai fornitori dei servizi digitali coperti dal decreto non si applicano le disposizioni della L. 4/2004, compresa la dichiarazione sul modello AgID.',
       scadenza:
         'Obblighi in vigore dal 28 giugno 2025 per i nuovi prodotti e servizi; periodo transitorio fino al 28 giugno 2030 per quelli preesistenti.',
+      riferimenti: [
+        'D.Lgs. 82/2022, attuativo della Direttiva (UE) 2019/882',
+        'AgID, Linee Guida sull\'accessibilità dei servizi (EAA), v1.0 del 4 marzo 2026 — https://www.agid.gov.it/sites/agid/files/2026-03/Linee_Guida_accessibilit%C3%A0_dei_servizi_(EAA).pdf',
+      ],
     },
   ],
+
+  /**
+   * L'esclusione per i contenuti di terzi.
+   *
+   * Sta qui e non fra i regimi perché non è un regime: è una deroga che vale
+   * per uno solo dei due, e a condizioni che vengono regolarmente riassunte
+   * male. Il report la cita quando trova componenti esterni, ed è il momento
+   * in cui qualcuno potrebbe leggerla come una scusante.
+   */
+  contenutiDiTerzi: {
+    fonte:
+      'Direttiva (UE) 2016/2102, art. 1, par. 4, lett. e), e considerando 30; ripresa nelle Linee guida AgID per le PA.',
+    condizioni:
+      'Vale solo se ricorrono tutte e tre insieme: contenuti né finanziati, né sviluppati, né sottoposti al controllo del soggetto obbligato.',
+    conseguenza:
+      'Un componente scelto, acquistato e configurato dal sito è sotto il suo controllo, quindi l\'esclusione non si applica. Il considerando 30 aggiunge che contenuti di terzi non dovrebbero essere usati se ostacolano o riducono la funzionalità del servizio.',
+    eaa:
+      'Per i soggetti dell\'European Accessibility Act non risulta un\'esclusione analoga: l\'origine esterna di un componente non lo porta fuori dall\'obbligo.',
+  },
 
   vigilanza:
     'AgID vigila sull\'applicazione della normativa e può svolgere verifiche a campione; sui prodotti operano le autorità di vigilanza del mercato.',

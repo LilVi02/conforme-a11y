@@ -1,0 +1,33 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><title>Banner che si chiude con Esc</title>
+<style>:focus{outline:3px solid #06c}.sr{position:absolute;left:-9999px}.sr:focus{left:8px}</style></head>
+<body>
+<a class="sr" href="#principale">Vai al contenuto</a>
+<nav><a href="/a">Uno</a> <a href="/b">Due</a> <a href="/c">Tre</a> <a href="/d">Quattro</a>
+<a href="/e">Cinque</a> <a href="/f">Sei</a> <a href="/g">Sette</a> <a href="/h">Otto</a></nav>
+<main id="principale" tabindex="-1"><h1>Contenuto</h1>
+<p>Testo.</p><button id="b1">Uno</button> <button id="b2">Due</button>
+<button id="b3">Tre</button> <button id="b4">Quattro</button></main>
+<div id="consenso" role="dialog" aria-label="Preferenze cookie">
+  <p>Usiamo i cookie.</p>
+  <button id="acc">Accetta</button><button id="rif">Rifiuta</button>
+  <button id="imp">Impostazioni</button><a href="/privacy" id="inf">Informativa</a>
+</div>
+<script>
+// Riproduce il comportamento osservato su comune.milano.it: il focus gira nel
+// banner e, arrivato in fondo, viene rimandato al documento invece che al
+// primo elemento. Il giro finisce con motivo "uscito", non "ciclo".
+var banner = document.getElementById('consenso');
+var dentro = [].slice.call(banner.querySelectorAll('button,a[href]'));
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Tab') return;
+  var i = dentro.indexOf(document.activeElement);
+  e.preventDefault();
+  if (i === -1) { dentro[0].focus(); return; }
+  if (i === dentro.length - 1) { dentro[i].blur(); return; }
+  dentro[i + 1].focus();
+}, true);
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') { banner.remove(); }
+});
+</script>
+</body></html>

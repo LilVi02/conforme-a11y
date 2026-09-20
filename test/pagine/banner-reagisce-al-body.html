@@ -1,0 +1,37 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><title>Banner che reagisce al focus sul documento</title>
+<style>:focus{outline:3px solid #06c}.sr{position:absolute;left:-9999px}.sr:focus{left:8px}
+#consenso{position:fixed;bottom:0;left:0;right:0;background:#eee;padding:12px}</style></head>
+<body>
+<a class="sr" href="#principale">Vai al contenuto</a>
+<nav><a href="/a">Uno</a> <a href="/b">Due</a> <a href="/c">Tre</a> <a href="/d">Quattro</a>
+<a href="/e">Cinque</a> <a href="/f">Sei</a> <a href="/g">Sette</a> <a href="/h">Otto</a></nav>
+<main id="principale" tabindex="-1"><h1>Contenuto</h1>
+<p>Testo.</p><button id="b1">Uno</button> <button id="b2">Due</button>
+<button id="b3">Tre</button> <button id="b4">Quattro</button></main>
+
+<div id="consenso" role="dialog" aria-label="Informativa sui cookie">
+  <p>Usiamo i cookie.</p>
+  <button id="acc">Accetta</button><button id="rif">Rifiuta</button>
+  <button id="imp">Impostazioni</button><a href="/privacy" id="inf">Informativa</a>
+</div>
+
+<script>
+// Riproduce il comportamento osservato su comune.milano.it, verificato a mano.
+//
+// Il banner NON è una trappola: premendo Tab se ne esce senza difficoltà, e
+// si prosegue nella pagina. Quello che fa è un'altra cosa: se il focus finisce
+// sul documento — cioè su <body>, dove nessuna persona lo porta mai — lo
+// riprende dentro di sé.
+//
+// È esattamente lo stato che il percorso con Tab creava per partire
+// dall'inizio della pagina. Conforme osservava la propria interferenza e la
+// dichiarava barriera bloccante del criterio 2.1.2. Questa pagina esiste
+// perché quell'errore non possa ripetersi senza che un test lo veda.
+var banner = document.getElementById('consenso');
+document.addEventListener('focusin', function (e) {
+  if (e.target === document.body || e.target === document.documentElement) {
+    banner.querySelector('button').focus();
+  }
+});
+</script>
+</body></html>

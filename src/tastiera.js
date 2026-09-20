@@ -19,6 +19,8 @@
  * criteri da "non verificabile" a "parzialmente verificato", non a "conforme".
  */
 
+import { percorsoUtilizzabile } from './aggrega.js';
+
 /** Elementi che ci si aspetta siano raggiungibili da tastiera. */
 const SELETTORE_INTERATTIVI = [
   'a[href]',
@@ -256,9 +258,12 @@ async function rilevaConfinamento(page, raggiunti, attesi) {
 
   try {
     return await page.evaluate(
-      ({ selRaggiunti, selAttesi }) => {
+      ({ selRaggiunti, selAttesi, descrivi }) => {
         const nodi = selRaggiunti.map((s) => document.querySelector(s)).filter(Boolean);
-        if (nodi.length === 0) return null;
+        // Se i selettori non si risolvono più — la pagina è cambiata, oppure
+        // il percorso ha attraversato uno shadow DOM — l'antenato calcolato su
+        // quel che resta non descrive niente. Meglio non rispondere.
+        if (nodi.length === 0 || nodi.length < selRaggiunti.length / 2) return null;
 
         // Antenato comune a tutti gli elementi raggiunti.
         let comune = nodi[0];
@@ -274,26 +279,239 @@ async function rilevaConfinamento(page, raggiunti, attesi) {
           .filter((e) => e && !comune.contains(e));
         if (fuori.length === 0) return null;
 
+        // Condividere un antenato non significa essere trattenuti da lui.
+        // Se il percorso si ferma dopo due link, quei due link stanno dentro
+        // l'intestazione: incolpare l'intestazione sarebbe inventare una causa.
+        //
+        // Chi trattiene il focus è sempre qualcosa che sta sopra la pagina —
+        // una finestra di dialogo o uno strato sovrapposto. Se il contenitore
+        // non lo è, la causa resta ignota, e va detto che resta ignota.
+        const ruoloContenitore = comune.getAttribute('role');
+        const stile = getComputedStyle(comune);
+        const sovrapposto =
+          comune.tagName === 'DIALOG' ||
+          comune.getAttribute('aria-modal') === 'true' ||
+          ruoloContenitore === 'dialog' ||
+          ruoloContenitore === 'alertdialog' ||
+          stile.position === 'fixed' ||
+          stile.position === 'sticky' ||
+          (stile.position === 'absolute' && Number(stile.zIndex) > 1);
+        if (!sovrapposto) return null;
+
         const html = comune.outerHTML || '';
+        const ruolo = comune.getAttribute('role');
+        const etichettaAria = comune.getAttribute('aria-label');
+
+        // L'etichetta serve a ritrovare il contenitore nel codice. Un banner di
+        // consenso spesso non ha né id né classi sul nodo esterno, e la sola
+        // parola "div" non aiuta nessuno: in quel caso valgono il ruolo e il
+        // nome accessibile, che sono ciò che lo distingue davvero.
         const et = [comune.tagName.toLowerCase()];
         if (comune.id) et.push('#' + comune.id);
         else if (comune.className && typeof comune.className === 'string') {
           const c = comune.className.trim().split(/\s+/).filter(Boolean).slice(0, 2);
           if (c.length) et.push('.' + c.join('.'));
         }
+        let etichetta = et.join('');
+        if (etichetta === comune.tagName.toLowerCase()) {
+          if (ruolo) etichetta += `[role="${ruolo}"]`;
+          if (etichettaAria) etichetta += `[aria-label="${etichettaAria.slice(0, 40)}"]`;
+        }
+
+        // Un riferimento univoco, per poter tornare a interrogare il
+        // contenitore dopo aver premuto Esc.
+        const f = eval('(' + descrivi + ')');
+        const descrizione = f(comune);
 
         return {
-          etichetta: et.join(''),
+          etichetta,
+          selettore: descrizione ? descrizione.selettore : null,
           html: html.length > 200 ? html.slice(0, 200) + '…' : html,
-          ruolo: comune.getAttribute('role') || null,
-          etichettaAria: comune.getAttribute('aria-label') || null,
+          ruolo: ruolo || null,
+          etichettaAria: etichettaAria || null,
           elementiFuori: fuori.length,
         };
       },
-      { selRaggiunti: raggiunti.map((r) => r.selettore), selAttesi: attesi.map((a) => a.selettore) }
+      {
+        selRaggiunti: raggiunti.map((r) => r.selettore),
+        selAttesi: attesi.map((a) => a.selettore),
+        descrivi: DESCRIVI,
+      }
     );
   } catch {
     return null;
+  }
+}
+
+/**
+ * Il focus riesce a uscire dal contenitore?
+ *
+ * È la domanda che decide se quello trovato è un difetto o un comportamento
+ * previsto — e, ancora prima, se è un fatto del sito o un effetto della
+ * scansione.
+ *
+ * Perché è fatta così. Per partire dall'inizio della pagina, il percorso con
+ * Tab sposta il focus sul <body>: uno stato che una persona non produce mai.
+ * I gestori di consenso reagiscono proprio a quello, riportando il focus
+ * dentro di sé, e il risultato era che Conforme osservava la propria
+ * interferenza e la dichiarava barriera. Su comune.milano.it ha segnalato come
+ * violazione bloccante del 2.1.2 un banner da cui, premendo Tab, si esce senza
+ * difficoltà: verificato a mano.
+ *
+ * Questa prova non tocca il focus. Preme Tab e basta, come farebbe una
+ * persona, e guarda se prima o poi si arriva fuori. Trenta pressioni sono
+ * molte più degli elementi di qualunque banner: se in trenta non si esce, il
+ * focus non gira, è chiuso. Solo allora si prova Esc, e solo se fallisce
+ * anche quello si parla di violazione.
+ *
+ * Gli stati del focus sono tre, non due, ed è la distinzione che fa
+ * funzionare la prova. "Dentro il contenitore" e "su un elemento della
+ * pagina" sono chiari. Il terzo è il <body>: lì il focus non è né trattenuto
+ * né arrivato da nessuna parte. Contarlo come dentro faceva dichiarare
+ * barriere che non esistono; contarlo come fuori assolveva le trappole vere,
+ * che il focus lo scaricano proprio sul documento prima di riprenderselo.
+ * È un limbo: non conclude niente, si preme ancora Tab.
+ *
+ * Uscire significa una cosa sola: arrivare su un elemento vero fuori dal
+ * contenitore, cioè raggiungere il resto della pagina.
+ *
+ * @returns {Promise<{esce: boolean|null, via: string|null}>}
+ *   esce null quando la prova non è riuscita: allora non si dice nulla.
+ */
+async function provaUscita(page, selettoreContenitore, { maxTab = 30 } = {}) {
+  if (!selettoreContenitore) return { esce: null, via: null };
+
+  /** @returns {Promise<'fuori'|'dentro'|'limbo'>} */
+  const dove = () =>
+    page.evaluate((s) => {
+      const el = document.querySelector(s);
+      if (!el) return 'fuori'; // il contenitore non c'è più
+      const st = getComputedStyle(el);
+      if (st.display === 'none' || st.visibility === 'hidden') return 'fuori';
+      const a = document.activeElement;
+      if (!a || a === document.body || a === document.documentElement) return 'limbo';
+      return el.contains(a) ? 'dentro' : 'fuori';
+    }, selettoreContenitore);
+
+  try {
+    // ── Prima prova: solo Tab, senza toccare il focus, come farebbe una persona.
+    for (let i = 0; i < maxTab; i++) {
+      await page.keyboard.press('Tab');
+      if ((await dove()) === 'fuori') return { esce: true, via: 'tab' };
+    }
+
+    // ── Seconda prova: Esc, che è la via d'uscita prevista per una modale.
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(250);
+    if ((await dove()) === 'fuori') return { esce: true, via: 'esc' };
+
+    for (let i = 0; i < 5; i++) {
+      await page.keyboard.press('Tab');
+      if ((await dove()) === 'fuori') return { esce: true, via: 'esc' };
+    }
+
+    return { esce: false, via: null };
+  } catch {
+    return { esce: null, via: null };
+  }
+}
+
+/**
+ * Filtri condivisi, eseguiti nel browser.
+ *
+ * Stanno qui in un pezzo solo perché i due controlli sulla raggiungibilità —
+ * quello che percorre la pagina con Tab e quello che legge il DOM — devono
+ * escludere esattamente le stesse cose. Quando le due liste divergevano, una
+ * scheda governata da aria-activedescendant finiva accusata dal primo e
+ * assolta dal secondo.
+ */
+const FILTRI = `{
+  // Elementi che ricevono il focus da soli, senza bisogno di tabindex.
+  nativi: 'a[href],button,input:not([type="hidden"]),select,textarea,[contenteditable="true"],[contenteditable=""]',
+
+  visibile(el) {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 && r.height === 0) return false;
+    const s = getComputedStyle(el);
+    return !(s.display === 'none' || s.visibility === 'hidden' || s.opacity === '0');
+  },
+
+  // Casi in cui non ricevere il focus è corretto, e segnalarli sarebbe un
+  // errore: comandi disattivati, sottoalberi dichiarati fuori uso o nascosti
+  // alla tecnologia assistiva, e widget compositi in cui è il contenitore a
+  // tenere il focus mentre aria-activedescendant indica l'elemento corrente
+  // — il modello previsto dallo standard per menu, schede ed elenchi.
+  fuoriGioco(el) {
+    if (el.disabled || el.getAttribute('aria-disabled') === 'true') return true;
+    if (el.closest('[aria-activedescendant]')) return true;
+    if (el.closest('[inert]')) return true;
+    if (el.closest('[aria-hidden="true"]')) return true;
+    return false;
+  },
+
+  // Può ricevere il focus: o per natura, o perché tabindex lo dichiara.
+  focalizzabile(el) {
+    if (el.matches(this.nativi)) return true;
+    const t = el.getAttribute('tabindex');
+    return t !== null && Number(t) >= 0;
+  },
+}`;
+
+/**
+ * Ruoli che dichiarano un comando: chi li porta deve poter ricevere il focus.
+ * `option` resta fuori di proposito: nelle listbox è quasi sempre governato da
+ * aria-activedescendant, e segnalarlo produrrebbe solo rumore.
+ */
+const RUOLI_COMANDO = [
+  'button', 'link', 'checkbox', 'radio', 'switch',
+  'menuitem', 'menuitemcheckbox', 'menuitemradio',
+  'tab', 'treeitem', 'combobox', 'textbox', 'searchbox',
+  'slider', 'spinbutton',
+];
+
+/**
+ * Elementi che non possono ricevere il focus — dimostrato dal DOM, non dedotto
+ * dal percorso con Tab.
+ *
+ * Nasce da un errore vero: la raggiungibilità veniva stabilita soltanto
+ * premendo Tab, e quando il percorso si fermava presto (un banner dei cookie,
+ * una modale) tutto il resto della pagina finiva accusato. Un link "salta al
+ * contenuto" perfettamente funzionante è stato segnalato come irraggiungibile
+ * su comune.milano.it.
+ *
+ * Questo controllo non dipende dal percorso. Guarda un fatto che si legge
+ * nel documento: un <div> o uno <span> con role="button" e senza tabindex non
+ * entra nell'ordine di tabulazione, punto. Nessuna interazione può cambiarlo.
+ *
+ * Le eccezioni legittime sono escluse per costruzione: i widget compositi che
+ * spostano il focus con aria-activedescendant, i sottoalberi inerti, gli
+ * elementi disabilitati e quelli nascosti agli screen reader.
+ */
+async function rilevaNonFocalizzabili(page) {
+  try {
+    return await page.evaluate(
+      ({ ruoli, descrivi, filtri }) => {
+        const f = eval('(' + descrivi + ')');
+        const q = eval('(' + filtri + ')');
+
+        const sel = ruoli.map((r) => '[role="' + r + '"]').join(',');
+        return [...document.querySelectorAll(sel)]
+          .filter((el) => {
+            if (el.hasAttribute('tabindex')) return false; // il focus è dichiarato
+            if (q.focalizzabile(el)) return false; // lo riceve per natura
+            if (q.fuoriGioco(el)) return false;
+            return q.visibile(el);
+          })
+          .map((el) => {
+            const d = f(el);
+            return d ? { ...d, ruolo: el.getAttribute('role') } : null;
+          })
+          .filter(Boolean);
+      },
+      { ruoli: RUOLI_COMANDO, descrivi: DESCRIVI, filtri: FILTRI }
+    );
+  } catch {
+    return [];
   }
 }
 
@@ -311,32 +529,75 @@ export async function verificaTastiera(page, opzioni = {}) {
   const violazioni = [];
 
   // ── Elementi che ci si aspetta di raggiungere
+  //
+  // Sono gli elementi che il focus dovrebbe toccare: visibili, attivi, e già
+  // in grado di ricevere il focus. Chi non può riceverlo resta fuori di
+  // proposito — lo segnala rilevaNonFocalizzabili, che lo dimostra dal DOM
+  // invece di dedurlo, e tenerlo anche qui produrrebbe la stessa riga due
+  // volte in due sezioni diverse del report.
   const attesi = await page.evaluate(
-    ({ sel, descrivi }) => {
-      const visibile = (el) => {
-        const r = el.getBoundingClientRect();
-        if (r.width === 0 && r.height === 0) return false;
-        const s = getComputedStyle(el);
-        if (s.display === 'none' || s.visibility === 'hidden' || s.opacity === '0') return false;
-        if (el.closest('[aria-hidden="true"]')) return false;
-        if (el.disabled) return false;
-        return true;
-      };
+    ({ sel, descrivi, filtri }) => {
       const f = eval('(' + descrivi + ')');
-      return [...document.querySelectorAll(sel)].filter(visibile).map(f).filter(Boolean);
+      const q = eval('(' + filtri + ')');
+      return [...document.querySelectorAll(sel)]
+        .filter((el) => q.visibile(el) && !q.fuoriGioco(el) && q.focalizzabile(el))
+        .map(f)
+        .filter(Boolean);
     },
-    { sel: SELETTORE_INTERATTIVI, descrivi: DESCRIVI }
+    { sel: SELETTORE_INTERATTIVI, descrivi: DESCRIVI, filtri: FILTRI }
   );
+
+  // ── Elementi esclusi dall'ordine di tabulazione, letti dal DOM
+  // Indipendente dal percorso: vale anche quando il percorso fallisce.
+  const nonFocalizzabili = await rilevaNonFocalizzabili(page);
 
   // ── Percorso con Tab
   const { sequenza, trappola, tabPremuti, motivoFine } = await percorriConTab(page, maxTab);
+
+  const raggiunti = new Set(sequenza.map((s) => s.selettore + '|' + s.testo));
+  const nonRaggiunti = attesi.filter((a) => !raggiunti.has(a.selettore + '|' + a.testo));
 
   // ── Il focus è rimasto chiuso dentro un contenitore?
   // Va stabilito prima di ogni altra cosa: se il giro non ha coperto la
   // pagina, gli altri risultati non valgono e riportarli sarebbe peggio che
   // tacerli.
+  //
+  // Il tentativo va fatto qualunque sia stato il motivo per cui il percorso
+  // si è fermato. Limitarlo al caso "ciclo" è stato un errore: su
+  // comune.milano.it il giro finiva con il focus rimandato al documento —
+  // motivo "uscito" — e il controllo non veniva nemmeno eseguito.
   const confinamento =
-    motivoFine === 'ciclo' ? await rilevaConfinamento(page, sequenza, attesi) : null;
+    !trappola && nonRaggiunti.length ? await rilevaConfinamento(page, sequenza, attesi) : null;
+
+  // ── Da quel contenitore si esce davvero?
+  //
+  // Decide due cose insieme: se quello trovato è un difetto o il
+  // comportamento previsto, e prima ancora se è un fatto del sito o un
+  // effetto del modo in cui il percorso è stato avviato.
+  //
+  // Va provato qui, subito: preme tasti e può chiudere il contenitore,
+  // quindi cambia la pagina sotto ai controlli che seguono — ma quei
+  // controlli guardano elementi che, se il contenitore si chiude, non
+  // riguardano più nessuno.
+  const uscita = confinamento
+    ? await provaUscita(page, confinamento.selettore)
+    : { esce: null, via: null };
+
+  // ── Il percorso ha davvero coperto la pagina?
+  //
+  // È la domanda che decide se i risultati del percorso valgono qualcosa.
+  // Qualche elemento non raggiunto su molti è un'informazione: sono quelli il
+  // problema. La maggioranza non raggiunta significa il contrario — il
+  // problema è il percorso, e l'elenco non dice nulla sugli elementi.
+  //
+  // La decisione vive in aggrega.js, dove i test possono raggiungerla senza
+  // avviare un browser.
+  const percorsoAttendibile = percorsoUtilizzabile({
+    attesi: attesi.length,
+    nonRaggiunti: nonRaggiunti.length,
+    trappola: Boolean(trappola),
+    confinamento: Boolean(confinamento),
+  });
 
   // ── 1. Trappola: il focus non avanza più
   if (trappola) {
@@ -355,47 +616,119 @@ export async function verificaTastiera(page, opzioni = {}) {
     });
   }
 
-  // ── 2. Focus confinato in un contenitore
+  // ── 2. Il percorso si è fermato dentro un contenitore
+  //
+  // Qui Conforme non accusa, e la ragione merita di essere scritta per esteso
+  // perché è costata due tentativi sbagliati.
+  //
+  // Un contenitore che trattiene il focus senza via d'uscita è una barriera
+  // piena, criterio 2.1.2. Ma per stabilirlo servirebbe distinguere il
+  // comportamento del sito da quello che il sito assume *a causa della
+  // scansione*, e questo metodo non ci riesce. Per partire dall'inizio della
+  // pagina il percorso sposta il focus sul documento, uno stato che una
+  // persona non produce mai; i gestori di consenso reagiscono riprendendosi
+  // il focus, e da lì in poi tutto quello che si osserva è la propria
+  // interferenza.
+  //
+  // Su comune.milano.it Conforme ha dichiarato una violazione bloccante del
+  // 2.1.2. Verificato a mano: dal banner si esce premendo Tab, senza
+  // difficoltà. Una prima correzione ha aggiunto la prova con Esc, e la
+  // violazione è rimasta. Una seconda ha aggiunto trenta pressioni di Tab
+  // senza toccare il focus, e la violazione è rimasta ancora.
+  //
+  // Un controllo che sbaglia due volte sullo stesso sito reale non va tarato
+  // una terza: va tolto dalle affermazioni. Quello che resta è vero e utile —
+  // il percorso si è fermato lì, quindi sul resto della pagina la prova da
+  // tastiera non dice nulla — e va fra le cose da guardare, dove una persona
+  // decide in mezzo minuto ciò che il codice non sa decidere.
   if (confinamento) {
     const chi = confinamento.etichettaAria
       ? `"${confinamento.etichettaAria}"`
       : confinamento.ruolo
         ? `con role="${confinamento.ruolo}"`
         : confinamento.etichetta;
+    const comune = `Percorrendo la pagina con Tab il focus ha toccato ${sequenza.length} elementi, tutti dentro il contenitore ${chi}, e sono rimasti fuori ${confinamento.elementiFuori} elementi interattivi. È il comportamento tipico dei gestori di consenso e delle finestre modali.`;
+
+    // Cosa ha trovato la prova di uscita. È un'informazione, non un verdetto:
+    // serve a orientare la verifica manuale, non a sostituirla.
+    const esito = {
+      tab: 'Premendo ancora Tab il focus ne esce, quindi non c\'è nessuna barriera: il percorso si era fermato per via dello spostamento iniziale del focus.',
+      esc: 'Premendo Esc il focus si libera, che è il comportamento previsto per una finestra modale.',
+    }[uscita.via];
+
+    const nonEsce =
+      uscita.esce === false
+        ? 'Il controllo automatico non è riuscito a uscirne, né premendo Tab trenta volte né premendo Esc — ma questo da solo non dimostra nulla, perché è proprio lo spostamento iniziale del focus a provocare il comportamento che si sta misurando. **Va verificato a mano, e ci vuole mezzo minuto:** apri la pagina in una finestra anonima, premi Tab finché non sei dentro il contenitore, poi continua a premere Tab. Se ne esci, qui non c\'è niente da correggere. Se non ne esci nemmeno premendo Esc, è una barriera che blocca l\'intero sito e va segnalata come violazione del criterio 2.1.2.'
+        : 'Non è stato possibile stabilire se da lì si esca. Va provato a mano: metti via il mouse e premi Tab ripetutamente.';
+
     violazioni.push({
-      id: 'tastiera-focus-confinato',
-      help: 'Il focus resta chiuso dentro un contenitore',
-      impact: 'critical',
-      tags: ['wcag2a', 'wcag212'],
+      id: 'tastiera-percorso-interrotto',
+      help: 'Il percorso con Tab non ha coperto la pagina',
+      impact: 'serious',
+      tags: ['wcag2a', 'wcag211', 'wcag212'],
       nodes: [
         {
           target: [confinamento.etichetta],
           html: confinamento.html,
-          failureSummary: `Premendo Tab il focus gira soltanto fra ${sequenza.length} elementi, tutti dentro questo contenitore ${chi}, e non ne esce: restano fuori ${confinamento.elementiFuori} elementi interattivi della pagina. È il comportamento tipico dei gestori di consenso e delle finestre modali che trattengono il focus. Chi naviga da tastiera non raggiunge il resto del sito.`,
+          failureSummary: `${comune} ${esito || nonEsce} In ogni caso il controllo automatico non ha percorso il resto della pagina: su quei ${confinamento.elementiFuori} elementi non dice nulla, e vanno provati a mano.`,
         },
       ],
     });
   }
 
-  // ── 3. Raggiungibilità
-  const raggiunti = new Set(sequenza.map((s) => s.selettore + '|' + s.testo));
-  const irraggiungibili = attesi.filter((a) => !raggiunti.has(a.selettore + '|' + a.testo));
+  // ── 3. Elementi fuori dall'ordine di tabulazione (dimostrato dal DOM)
+  if (nonFocalizzabili.length) {
+    violazioni.push({
+      id: 'tastiera-non-focalizzabile',
+      help: 'Comandi che non possono ricevere il focus',
+      impact: 'critical',
+      tags: ['wcag2a', 'wcag211'],
+      nodes: nonFocalizzabili.slice(0, 10).map((e) => ({
+        target: [e.etichetta || e.selettore],
+        html: e.html,
+        failureSummary: `Questo elemento dichiara role="${e.ruolo}", quindi si presenta come un comando, ma non è un elemento nativamente focalizzabile e non ha l'attributo tabindex: non entra nell'ordine di tabulazione e da tastiera non si può raggiungere${e.testo ? ` ("${e.testo}")` : ''}.`,
+      })),
+    });
+  }
 
-  // Questa lista vale solo se il percorso ha davvero coperto la pagina. Se si
-  // è fermato per una trappola o è rimasto chiuso in un contenitore, gli
-  // elementi non raggiunti non sono irraggiungibili: semplicemente non ci
-  // siamo arrivati. Accusarli sarebbe un errore grossolano.
-  if (!trappola && !confinamento && irraggiungibili.length) {
+  // ── 4. Raggiungibilità osservata premendo Tab
+  //
+  // Vale solo se il percorso ha coperto la pagina. Se si è fermato per una
+  // trappola, è rimasto chiuso in un contenitore o ha lasciato fuori la
+  // maggioranza degli elementi, quelli non raggiunti non sono irraggiungibili:
+  // semplicemente non ci siamo arrivati. Accusarli sarebbe un errore
+  // grossolano — ed è esattamente l'errore che questo scanner ha commesso,
+  // dichiarando assente un link "salta al contenuto" che funzionava.
+  if (percorsoAttendibile && nonRaggiunti.length) {
     violazioni.push({
       id: 'tastiera-irraggiungibile',
       help: 'Elementi interattivi non raggiungibili da tastiera',
       impact: 'critical',
       tags: ['wcag2a', 'wcag211'],
-      nodes: irraggiungibili.slice(0, 10).map((e) => ({
+      nodes: nonRaggiunti.slice(0, 10).map((e) => ({
         target: [e.etichetta || e.selettore],
         html: e.html,
-        failureSummary: `Questo elemento è visibile e interattivo, ma premendo Tab non riceve mai il focus${e.testo ? ` ("${e.testo}")` : ''}.`,
+        failureSummary: `Questo elemento è visibile e interattivo, ma percorrendo l'intera pagina con Tab non riceve mai il focus${e.testo ? ` ("${e.testo}")` : ''}.`,
       })),
+    });
+  }
+
+  // Percorso interrotto senza una causa identificabile: va detto, perché
+  // altrimenti l'assenza di segnalazioni sulla tastiera si legge come un esito
+  // pulito mentre è un controllo non riuscito.
+  if (!percorsoAttendibile && !trappola && !confinamento && nonRaggiunti.length) {
+    violazioni.push({
+      id: 'tastiera-percorso-interrotto',
+      help: 'Il percorso con Tab non ha coperto la pagina',
+      impact: 'serious',
+      tags: ['wcag2a', 'wcag211'],
+      nodes: [
+        {
+          target: [sequenza[0] ? sequenza[0].etichetta || sequenza[0].selettore : 'body'],
+          html: sequenza[0] ? sequenza[0].html : '',
+          failureSummary: `Premendo Tab il focus ha toccato ${sequenza.length} elementi su ${attesi.length} presenti nella pagina, poi il giro si è chiuso (${spiegaFine(motivoFine)}). Non è possibile dire se gli altri ${nonRaggiunti.length} siano raggiungibili: il controllo automatico non è arrivato fino a loro, e non vengono segnalati. Le cause tipiche sono un banner di consenso o una finestra modale che trattiene il focus, oppure uno script che lo riporta all'inizio del documento. Va ripetuto a mano, partendo dalla pagina nello stato in cui la trova una persona.`,
+        },
+      ],
     });
   }
 
@@ -426,7 +759,7 @@ export async function verificaTastiera(page, opzioni = {}) {
   const haSkipLink =
     primo && primo.tag === 'a' && typeof primo.href === 'string' && primo.href.startsWith('#') && primo.href.length > 1;
 
-  if (!confinamento && !trappola && sequenza.length > 15 && !haSkipLink) {
+  if (percorsoAttendibile && sequenza.length > 15 && !haSkipLink) {
     violazioni.push({
       id: 'tastiera-senza-salto-blocchi',
       help: 'Nessun link per saltare direttamente al contenuto',
@@ -445,16 +778,39 @@ export async function verificaTastiera(page, opzioni = {}) {
   return {
     violazioni,
     statistiche: {
-      percorsoCompleto: !confinamento && !trappola,
+      percorsoCompleto: percorsoAttendibile,
       confinato: Boolean(confinamento),
       motivoFine,
       elementiAttesi: attesi.length,
       elementiRaggiunti: sequenza.length,
+      nonRaggiunti: nonRaggiunti.length,
+      nonFocalizzabili: nonFocalizzabili.length,
       tabPremuti,
+      confinamentoConUscita: uscita.esce,
+      confinamentoUscitaVia: uscita.via,
+      // Nessun campo dichiara più "trappola accertata": vedi il commento al
+      // punto 2. Resta il fatto osservato, che è dove il percorso si è fermato.
       trappolaTrovata: Boolean(trappola),
       focusControllati: Math.min(sequenza.length, maxFocusDaControllare),
       senzaIndicatore: senzaIndicatore.length,
+      // Il link di salto si può affermare presente comunque; si può dire
+      // assente solo se il percorso è arrivato in fondo.
       skipLink: haSkipLink,
+      skipLinkVerificato: percorsoAttendibile,
     },
   };
+}
+
+/** Traduce in italiano il motivo per cui il percorso con Tab si è fermato. */
+function spiegaFine(motivo) {
+  switch (motivo) {
+    case 'ciclo':
+      return 'il focus è tornato al primo elemento';
+    case 'uscito':
+      return 'il focus ha lasciato il documento';
+    case 'trappola':
+      return 'il focus ha smesso di spostarsi';
+    default:
+      return 'raggiunto il limite di pressioni previsto';
+  }
 }

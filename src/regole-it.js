@@ -24,15 +24,20 @@ export const REGOLE = {
     correzione:
       'Qualcosa intercetta il tasto Tab e riporta il focus dov\'era. Di solito è un gestore di eventi con preventDefault() su keydown, oppure una finestra modale che cicla il focus senza offrire una via d\'uscita. Ogni componente che trattiene il focus deve poter essere chiuso con Esc e restituire il focus a chi l\'ha aperto.',
   },
-  'tastiera-focus-confinato': {
-    descrizione: 'Il focus resta chiuso dentro un contenitore',
-    correzione:
-      'Un contenitore — quasi sempre un banner di consenso o una finestra modale — trattiene il focus e non lo lascia uscire. Se è una modale il comportamento è corretto, ma deve potersi chiudere con Esc restituendo il focus a chi l\'ha aperta. Se è un banner dei cookie, il focus non deve restare intrappolato: chi naviga da tastiera deve poter raggiungere il resto della pagina anche senza rispondere. Verifica il gestore di keydown che intercetta Tab.',
-  },
   'tastiera-irraggiungibile': {
     descrizione: 'Elementi interattivi non raggiungibili da tastiera',
     correzione:
       'L\'elemento risponde al clic ma non compare nell\'ordine di tabulazione: quasi sempre è un <div> o uno <span> con un gestore onclick. Sostituiscilo con <button> o <a>, che sono raggiungibili da soli. Se devi tenere l\'elemento generico servono tabindex="0", un role adeguato e la gestione di Invio e Spazio in keydown.',
+  },
+  'tastiera-non-focalizzabile': {
+    descrizione: 'Comandi che non possono ricevere il focus',
+    correzione:
+      'L\'elemento dichiara un ruolo da comando — role="button", role="link", role="tab" — ma è un <div> o uno <span>, che di suo non entra nell\'ordine di tabulazione, e non ha tabindex. Da tastiera è irraggiungibile: non serve provare, lo dice il DOM. La correzione migliore è sostituirlo con <button> o <a href>, che sono focalizzabili e gestiscono Invio e Spazio da soli. Se l\'elemento generico deve restare, aggiungi tabindex="0" e un gestore di keydown per Invio e Spazio. Dentro menu, elenchi a discesa e schede è ammesso che il focus resti sul contenitore, ma allora serve aria-activedescendant.',
+  },
+  'tastiera-percorso-interrotto': {
+    descrizione: 'Il percorso con Tab non ha coperto la pagina',
+    correzione:
+      'Non è un\'accusa al sito: è un controllo che non è riuscito, e che è meglio sapere non riuscito che credere superato. Premendo Tab il focus ha toccato pochi elementi e poi il giro si è chiuso, quindi sul resto della pagina la prova da tastiera non dice nulla — e infatti non segnala nulla. La causa più frequente è un banner di consenso o una finestra modale: per partire dall\'inizio della pagina il controllo sposta il focus sul documento, uno stato che una persona non produce mai, e quei componenti reagiscono riprendendoselo. Da lì in poi il controllo misura la propria interferenza, e per questo Conforme non conclude nulla da solo. Tocca a te, e sono trenta secondi: apri la pagina in una finestra anonima, premi Tab finché non sei dentro il contenitore, poi continua a premere Tab. Se ne esci, qui non c\'è niente da correggere e resta solo da percorrere a mano la parte di pagina che il controllo non ha raggiunto. Se non ne esci nemmeno premendo Esc, quella è una barriera che blocca l\'intero sito: criterio 2.1.2, e va corretta agendo sul gestore di keydown che intercetta Tab, facendo in modo che Esc chiuda il contenitore e restituisca il focus a chi l\'ha aperto.',
   },
   'tastiera-focus-invisibile': {
     descrizione: 'Nessun indicatore visibile quando l\'elemento riceve il focus',

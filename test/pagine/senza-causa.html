@@ -1,0 +1,18 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><title>Percorso interrotto senza causa</title>
+<style>:focus{outline:3px solid #06c}</style></head>
+<body>
+<header><a href="/a">Uno</a> <a href="/b">Due</a></header>
+<main><h1>Contenuto</h1>
+<button>Tre</button> <button>Quattro</button> <button>Cinque</button> <button>Sei</button>
+<button>Sette</button> <button>Otto</button> <button>Nove</button> <button>Dieci</button>
+<a href="/c">Undici</a> <a href="/d">Dodici</a></main>
+<script>
+// Il focus viene riportato al documento dopo il quarto spostamento, ma gli
+// elementi toccati stanno in contenitori diversi: nessun contenitore unico da
+// incolpare. Lo scanner non deve inventarsene uno né accusare gli altri.
+var n = 0;
+document.addEventListener('focusin', function () {
+  if (++n >= 4) { document.activeElement.blur(); n = 0; }
+}, true);
+</script>
+</body></html>

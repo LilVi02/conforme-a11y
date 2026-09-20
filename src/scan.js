@@ -18,6 +18,7 @@ import { RACCOGLITORE, leggiAscoltatori } from './ascoltatori.js';
 import { verificaMedia } from './media.js';
 import { verificaInterazione } from './interazione.js';
 import { verificaStruttura } from './struttura.js';
+import { attribuisciOrigine } from './origine.js';
 
 const TAG_WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
@@ -93,18 +94,23 @@ export async function scansionaPagina(browser, url, opzioni = {}) {
       }));
     }
 
+    // Da dove arriva ogni segnalazione: dal sito o da un componente esterno.
+    // Va fatto prima della normalizzazione, finché `nodes` contiene tutte le
+    // occorrenze e non i soli cinque esempi tenuti nel report.
+    const grezze = [
+      ...risultati.violations,
+      ...daTastiera.violazioni,
+      ...daMedia.violazioni,
+      ...daStruttura.violazioni,
+      ...daInterazione.violazioni,
+      ...daReflow.violazioni,
+    ];
+    await attribuisciOrigine(page, grezze).catch(() => {});
+    await attribuisciOrigine(page, risultati.incomplete).catch(() => {});
+
     // I controlli che richiedono un giudizio non vanno fra le violazioni
     // accertate: finiscono con i casi che axe non ha saputo risolvere.
-    const smistate = separaIncerte(
-      normalizzaViolazioni([
-        ...risultati.violations,
-        ...daTastiera.violazioni,
-        ...daMedia.violazioni,
-        ...daStruttura.violazioni,
-        ...daInterazione.violazioni,
-        ...daReflow.violazioni,
-      ])
-    );
+    const smistate = separaIncerte(normalizzaViolazioni(grezze));
 
     return {
       url,

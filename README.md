@@ -45,7 +45,25 @@ axe analizza il DOM da fermo e non può premere Tab: per questo tutti i criteri 
 
 Conforme percorre la pagina premendo Tab davvero, e osserva quattro cose: che gli elementi interattivi visibili ricevano il focus, che il focus non resti bloccato, che dando il focus qualcosa cambi sullo schermo, che il primo Tab offra un link per saltare al contenuto.
 
-Quando il focus resta chiuso dentro un contenitore — il caso tipico è il banner dei cookie che lo trattiene — il percorso non copre la pagina. In quel caso Conforme riporta il confinamento, che è il problema vero, e tace sul resto: gli elementi non raggiunti non sono irraggiungibili, semplicemente il giro non ci è arrivato. Il controllo nasce da un errore reale, su comune.milano.it: il report dichiarava assente un link "salta al contenuto" che era lì e funzionava.
+Un quinto controllo non dipende dal percorso: un `<div>` con `role="button"` e senza `tabindex` non entra nell'ordine di tabulazione, e questo si legge nel documento senza bisogno di premere niente. I widget compositi che governano il focus con `aria-activedescendant` — menu, schede, elenchi a discesa — restano esclusi, perché lì il comportamento è quello previsto dallo standard.
+
+### Quando il percorso non vale, Conforme tace
+
+Il percorso con Tab può fermarsi prima di aver coperto la pagina: un banner dei cookie o una finestra modale trattiene il focus, oppure uno script lo riporta all'inizio. Allora gli elementi non raggiunti non sono irraggiungibili — semplicemente il giro non ci è arrivato — e riportarli sarebbe un'accusa falsa.
+
+Conforme confronta quanto ha percorso con quanto c'era da percorrere. Se resta fuori una minoranza, sono quegli elementi il problema e vengono segnalati. Se resta fuori la maggioranza, il problema è il percorso: Conforme non segnala nessun elemento e dichiara invece che il controllo non è riuscito, indicando dove si è fermato. Non incolpa un contenitore qualsiasi per il solo fatto di contenere gli elementi toccati: deve essere qualcosa che sta sopra la pagina — una finestra di dialogo o uno strato sovrapposto — altrimenti la causa resta dichiarata ignota.
+
+Il controllo nasce da un errore reale, su comune.milano.it: il percorso toccava quattro elementi su oltre cento e il report dichiarava irraggiungibile un link "salta al contenuto" che era lì e funzionava.
+
+Trovato il contenitore, resta la domanda che sembra decidere tutto: è una barriera o il comportamento previsto? Conforme non risponde, e vale la pena spiegare perché.
+
+Per partire dall'inizio della pagina il percorso sposta il focus sul documento: uno stato che una persona non produce mai. I gestori di consenso reagiscono proprio a quello e si riprendono il focus. Da lì in poi il controllo misura la propria interferenza, e non c'è modo di separarla dal comportamento del sito.
+
+Su comune.milano.it Conforme ha dichiarato una violazione bloccante del 2.1.2 su un banner da cui, premendo Tab, si esce senza difficoltà. Due correzioni hanno provato a rendere veritiero quel verdetto: prima una prova con Esc, poi trenta pressioni di Tab senza toccare il focus. Il verdetto falso è rimasto tutte e due le volte. Un controllo che sbaglia due volte sullo stesso sito reale non va tarato una terza: va tolto dalle affermazioni.
+
+Quindi Conforme non accerta più il confinamento del focus. Riferisce il fatto osservato — il percorso si è fermato dentro questo contenitore, e su questi elementi non dice nulla — indica cosa ha trovato provando a uscirne, e dice a chi legge come verificarlo in mezzo minuto. Finisce fra le cose da guardare, non fra i problemi.
+
+Resta accertata l'altra trappola, quella in cui il focus non si sposta affatto: lì non c'è niente da interpretare, Tab viene premuto e il focus resta dov'era.
 
 Il limite del metodo va detto: osserva fatti meccanici, non usabilità. Sa dire che un elemento riceve il focus, non che l'indicatore sia percepibile; sa dire che nessun elemento è irraggiungibile, non che il percorso di acquisto si completi. Sposta questi criteri da "non verificabile" a "parzialmente verificato".
 
@@ -70,6 +88,14 @@ Dal documento si leggono poi gli audio che partono da soli, le animazioni senza 
 Due prove richiedono di agire: si dà il focus a ogni campo e se ne cambia il valore, per vedere se la pagina naviga o invia da sola. I tentativi vengono intercettati e annullati, e i moduli che sembrano fare cose serie — pagamenti, cancellazioni — non vengono toccati affatto.
 
 Infine si confronta l'ordine del codice con la posizione a schermo dentro i contenitori flex e grid, che è il meccanismo con cui il CSS riordina davvero i blocchi.
+
+## Chi deve correggere
+
+Un report che dice "il tuo sito ha tredici problemi" mette sullo stesso piano cose che si sistemano in modi diversissimi. Su comune.milano.it quattro segnalazioni su tredici non nascono dal codice del Comune: vengono dal gestore del consenso ai cookie e da un modulo incorporato da un fornitore esterno. Chi riceve quel report non può aprire un editor e sistemarle.
+
+Conforme distingue le due cose, con due livelli di certezza che tiene separati perché non valgono uguale. Un elemento dentro un iframe servito da un altro dominio è un fatto, e si legge dall'indirizzo. Un componente riconosciuto dai nomi che lascia nelle classi — OneTrust, Iubenda, reCAPTCHA, una ventina in tutto — è un'ipotesi molto probabile, e il report lo dichiara come tale. L'elenco dei componenti conosciuti non sarà mai completo: quello che non viene riconosciuto è attribuito al sito, perché è meglio attribuire al sito qualcosa di terzi che assolverlo da qualcosa di suo.
+
+L'attribuzione non è una scusante, e il report lo dice. Per i soggetti della Legge Stanca la direttiva (UE) 2016/2102 esclude i contenuti di terzi all'articolo 1, paragrafo 4, lettera e), ma a tre condizioni che devono valere tutte insieme: non finanziati, non sviluppati e non sottoposti al controllo del soggetto obbligato. Un banner dei cookie scelto, pagato e configurato è sotto il controllo di chi lo ha messo. Per i soggetti dell'European Accessibility Act non risulta un'esclusione analoga.
 
 ## Cosa è accertato e cosa va guardato
 
@@ -167,6 +193,7 @@ src/struttura.js     ordine di lettura, vie di navigazione
 src/manuale.js       le 14 verifiche manuali, collegate ai criteri che coprono
 src/dichiarazione.js scheda preparatoria e distinzione fra i due regimi
 src/argomenti.js     argomenti da riga di comando
+src/origine.js       attribuisce ogni segnalazione al sito o a un componente esterno
 src/aggrega.js       aggregazione dei risultati
 src/scan.js          Playwright + axe-core
 src/report.js        Markdown e JSON
@@ -181,7 +208,17 @@ I moduli che pilotano il browser sono `scan.js`, `tastiera.js`, `reflow.js`, `me
 npm test
 ```
 
-75 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
+117 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
+
+```bash
+npm run test:browser
+```
+
+I controlli che pilotano il browser, su pagine costruite apposta: un banner che trattiene il focus senza via d'uscita, uno che si chiude con Esc, una pagina corretta, una con finti comandi, una in cui il percorso si interrompe senza causa identificabile, una che riprende il focus dal documento senza essere una trappola, una con componenti di terze parti. Richiedono Chromium, e per questo stanno a parte.
+
+Le pagine vengono servite via HTTP su due porte, non aperte da disco: l'attribuzione a terze parti confronta le origini, e con `file://` l'origine è opaca — un test così direbbe sempre "stessa origine" e passerebbe anche a codice sbagliato.
+
+Ogni controllo ha una pagina che lo fa scattare e una che non deve farlo scattare. La seconda conta più della prima: è quella che smaschera le accuse false, ed è l'unica che distingue un controllo corretto da un controllo spento.
 
 ## Provenienza dei contenuti
 
