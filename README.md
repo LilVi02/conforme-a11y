@@ -20,7 +20,7 @@ Il report elenca i problemi in ordine di gravità per l'utente, non di severità
 ### 1. Link senza testo riconoscibile
 
 BLOCCANTE — impedisce di usare il sito
-Occorrenze: 19 su 1 pagina/e
+Occorrenze: 19 su 1 pagina
 Regola tecnica: link-name
 
 Come si corregge: Ogni <a> deve avere un testo riconoscibile. Se contiene
@@ -209,7 +209,7 @@ I moduli che pilotano il browser sono `scan.js`, `tastiera.js`, `reflow.js`, `me
 npm test
 ```
 
-119 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
+120 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
 
 ```bash
 npm run test:browser

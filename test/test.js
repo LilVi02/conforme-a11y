@@ -736,7 +736,7 @@ console.log('\nControlli su media, interazione e struttura');
 
 test('tutte le nuove regole hanno descrizione e correzione', () => {
   const nuove = [
-    'media-autoplay-sonoro','media-senza-alternative','tempo-ricaricamento-automatico',
+    'media-autoplay-sonoro','media-senza-alternative',
     'movimento-senza-pausa','orientamento-bloccato','azionamento-da-movimento',
     'scorciatoie-da-verificare','azione-alla-pressione','gesti-senza-alternativa',
     'cambio-contesto-al-focus','cambio-contesto-all-input','ordine-lettura-diverso',
@@ -748,11 +748,28 @@ test('tutte le nuove regole hanno descrizione e correzione', () => {
   }
 });
 
+test('nessuna regola propria è documentata senza essere mai prodotta', () => {
+  // Una voce in regole-it.js che nessun controllo emette è una promessa
+  // falsa: dice che Conforme verifica qualcosa che non verifica. È successo
+  // con il ricaricamento automatico, lasciato documentato dopo che il
+  // controllo era stato tolto perché axe lo fa già con meta-refresh.
+  const sorgenti = fs
+    .readdirSync(new URL('../src/', import.meta.url))
+    .filter((f) => f.endsWith('.js') && f !== 'regole-it.js')
+    .map((f) => fs.readFileSync(new URL('../src/' + f, import.meta.url), 'utf8'))
+    .join('\n');
+  const proprie = Object.keys(REGOLE).filter((r) =>
+    /^(tastiera|reflow|media|movimento|orientamento|azionamento|scorciatoie|azione|gesti|cambio|ordine|poche|spaziatura|testo-|tempo)/.test(r)
+  );
+  for (const r of proprie) {
+    assert.ok(sorgenti.includes(`id: '${r}'`), `${r} è documentata ma nessun controllo la produce`);
+  }
+});
+
 test('ogni nuova regola si aggancia al criterio WCAG corretto', () => {
   const attesi = {
     'media-autoplay-sonoro': ['wcag142', '1.4.2'],
     'media-senza-alternative': ['wcag121', '1.2.1'],
-    'tempo-ricaricamento-automatico': ['wcag221', '2.2.1'],
     'movimento-senza-pausa': ['wcag222', '2.2.2'],
     'orientamento-bloccato': ['wcag134', '1.3.4'],
     'azionamento-da-movimento': ['wcag254', '2.5.4'],

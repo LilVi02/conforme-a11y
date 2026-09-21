@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
-      # I test non richiedono un browser: la logica di mappatura,
-      # aggregazione e report è separata dalla scansione.
       - run: npm test
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser

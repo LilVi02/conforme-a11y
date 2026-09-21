@@ -74,11 +74,6 @@ export const REGOLE = {
     correzione:
       'Per i video con parlato aggiungi <track kind="captions" srclang="it" src="…">. Per i contenuti solo audio serve una trascrizione testuale, che può stare accanto al player o dietro un link chiaramente etichettato. I sottotitoli generati automaticamente e non revisionati non soddisfano il criterio.',
   },
-  'tempo-ricaricamento-automatico': {
-    descrizione: 'La pagina si ricarica da sola',
-    correzione:
-      'Togli il meta refresh. Se il contenuto deve aggiornarsi, fallo aggiornare da un pulsante, oppure avvisa prima della scadenza e offri la possibilità di prolungare. Un ricaricamento imprevisto fa perdere il segno a chi legge lentamente e il lavoro a chi sta compilando un modulo.',
-  },
   'movimento-senza-pausa': {
     descrizione: 'Movimento continuo senza un comando per fermarlo',
     correzione:
