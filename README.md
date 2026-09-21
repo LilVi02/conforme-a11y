@@ -1,20 +1,22 @@
 # Conforme
 
-Scanner di accessibilità per siti italiani. La scansione la esegue axe-core; Conforme traduce ogni violazione nel criterio WCAG corrispondente, spiega chi resta escluso e indica cosa modificare nel codice.
+**English** · [Italiano](README.it.md)
 
-È nato perché gli scanner esistenti restituiscono elenchi di regole in inglese, che chi deve decidere se investire non riesce a interpretare.
+Accessibility scanner for Italian websites. axe-core runs the scan; Conforme maps every violation to its WCAG criterion, explains who is locked out, and says what to change in the code. Reports are written in Italian, because the people who have to act on them are Italian, and so is the law they answer to.
+
+It exists because existing scanners return lists of rules in English, which the person deciding whether to pay for a fix cannot interpret.
 
 ```bash
 npm install
 npx playwright install chromium
-npm start -- esempio.it
+npm start -- example.it
 ```
 
-I file `report.md` e `scheda-dichiarazione.md` vengono scritti in una cartella intitolata al sito, per esempio `report_comune-milano-it/`. Le cartelle dei report non finiscono nel repository: riguardano siti di terzi e cambiano a ogni esecuzione.
+`report.md` and `scheda-dichiarazione.md` are written to a folder named after the site, for instance `report_comune-milano-it/`. Report folders stay out of the repository: they concern third-party sites and change on every run.
 
-## Cosa produce
+## What it produces
 
-Il report elenca i problemi in ordine di gravità per l'utente, non di severità tecnica. Ogni voce riporta il criterio WCAG, l'impatto in parole, la correzione specifica per quella regola e il codice in cui si trova.
+The report lists problems in order of consequence for the user, not technical severity. Each entry gives the WCAG criterion, the impact in plain words, the fix for that specific rule, and the code where it occurs. This is what an entry looks like — the output is in Italian:
 
 ```
 ### 1. Link senza testo riconoscibile
@@ -37,140 +39,142 @@ a[href$="municipio-8"]
 <a href="/web/municipio-8" target="_blank" rel="noreferrer">
 ```
 
-Quello riportato sopra è un caso reale: diciannove link ai Municipi sul sito del Comune di Milano, nessuno dei quali contiene un testo. Chi usa uno screen reader sente diciannove link identici e non può scegliere il proprio.
+That is a real case: nineteen links to the city districts on the Comune di Milano homepage, none of which contains any text. A screen reader user hears nineteen identical links and cannot pick their own district.
 
-## La prova da tastiera
+## The keyboard test
 
-axe analizza il DOM da fermo e non può premere Tab: per questo tutti i criteri sulla tastiera finiscono di norma fra quelli da verificare a mano, e restano la barriera più bloccante e meno controllata del web.
+axe analyses the DOM at rest and cannot press Tab. That is why keyboard criteria normally end up on the manual list, and why they remain the most blocking and least checked barrier on the web.
 
-Conforme percorre la pagina premendo Tab davvero, e osserva quattro cose: che gli elementi interattivi visibili ricevano il focus, che il focus non resti bloccato, che dando il focus qualcosa cambi sullo schermo, che il primo Tab offra un link per saltare al contenuto.
+Conforme walks the page by actually pressing Tab, and checks four things: that visible interactive elements receive focus, that focus never gets stuck, that something changes on screen when an element is focused, and that the first Tab offers a link to skip to the content.
 
-Un quinto controllo non dipende dal percorso: un `<div>` con `role="button"` e senza `tabindex` non entra nell'ordine di tabulazione, e questo si legge nel documento senza bisogno di premere niente. I widget compositi che governano il focus con `aria-activedescendant` — menu, schede, elenchi a discesa — restano esclusi, perché lì il comportamento è quello previsto dallo standard.
+A fifth check does not depend on the walk: a `<div>` with `role="button"` and no `tabindex` is not in the tab order, and that can be read from the document without pressing anything. Composite widgets that manage focus with `aria-activedescendant` — menus, tabs, listboxes — are excluded, because there that behaviour is what the standard prescribes.
 
-### Quando il percorso non vale, Conforme tace
+### When the walk can't be trusted, Conforme stays silent
 
-Il percorso con Tab può fermarsi prima di aver coperto la pagina: un banner dei cookie o una finestra modale trattiene il focus, oppure uno script lo riporta all'inizio. Allora gli elementi non raggiunti non sono irraggiungibili — semplicemente il giro non ci è arrivato — e riportarli sarebbe un'accusa falsa.
+The Tab walk can stop before covering the page: a cookie banner or a modal holds the focus, or a script sends it back to the start. The elements it never reached are not unreachable — the walk simply never got there — and reporting them would be a false accusation.
 
-Conforme confronta quanto ha percorso con quanto c'era da percorrere. Se resta fuori una minoranza, sono quegli elementi il problema e vengono segnalati. Se resta fuori la maggioranza, il problema è il percorso: Conforme non segnala nessun elemento e dichiara invece che il controllo non è riuscito, indicando dove si è fermato. Non incolpa un contenitore qualsiasi per il solo fatto di contenere gli elementi toccati: deve essere qualcosa che sta sopra la pagina — una finestra di dialogo o uno strato sovrapposto — altrimenti la causa resta dichiarata ignota.
+Conforme compares how much it covered with how much there was to cover. If a minority is left out, those elements are the problem and get reported. If most of the page is left out, the problem is the walk: Conforme reports no elements and states instead that the check did not complete, and where it stopped. It does not blame an arbitrary container just because it holds the elements the walk touched: it has to be something sitting above the page — a dialog or an overlay — otherwise the cause is declared unknown.
 
-Il controllo nasce da un errore reale, su comune.milano.it: il percorso toccava quattro elementi su oltre cento e il report dichiarava irraggiungibile un link "salta al contenuto" che era lì e funzionava.
+This check comes from a real mistake on comune.milano.it: the walk touched four elements out of more than a hundred, and the report declared a working "skip to content" link unreachable.
 
-Trovato il contenitore, resta la domanda che sembra decidere tutto: è una barriera o il comportamento previsto? Conforme non risponde, e vale la pena spiegare perché.
+Once the container is found, there is the question that seems to settle everything: is it a barrier, or intended behaviour? Conforme does not answer it, and the reason is worth spelling out.
 
-Per partire dall'inizio della pagina il percorso sposta il focus sul documento: uno stato che una persona non produce mai. I gestori di consenso reagiscono proprio a quello e si riprendono il focus. Da lì in poi il controllo misura la propria interferenza, e non c'è modo di separarla dal comportamento del sito.
+To start from the top of the page, the walk moves focus to the document itself — a state no person ever produces. Consent managers react to exactly that, pulling focus back into themselves. From then on the check is measuring its own interference, and there is no way to separate that from the site's behaviour.
 
-Su comune.milano.it Conforme ha dichiarato una violazione bloccante del 2.1.2 su un banner da cui, premendo Tab, si esce senza difficoltà. Due correzioni hanno provato a rendere veritiero quel verdetto: prima una prova con Esc, poi trenta pressioni di Tab senza toccare il focus. Il verdetto falso è rimasto tutte e due le volte. Un controllo che sbaglia due volte sullo stesso sito reale non va tarato una terza: va tolto dalle affermazioni.
+On comune.milano.it Conforme reported a blocking violation of 2.1.2 (No Keyboard Trap) for a banner you can leave by pressing Tab. Two fixes tried to make that verdict truthful: first a test with Esc, then thirty Tab presses without touching focus. The false verdict survived both. A check that is wrong twice on the same real site does not get tuned a third time: it gets removed from the claims.
 
-Quindi Conforme non accerta più il confinamento del focus. Riferisce il fatto osservato — il percorso si è fermato dentro questo contenitore, e su questi elementi non dice nulla — indica cosa ha trovato provando a uscirne, e dice a chi legge come verificarlo in mezzo minuto. Finisce fra le cose da guardare, non fra i problemi.
+So Conforme no longer asserts focus confinement. It reports what it observed — the walk stopped inside this container, and says nothing about these elements — notes what it found when trying to get out, and tells the reader how to check it in thirty seconds. It goes among the items to review, not the problems.
 
-Resta accertata l'altra trappola, quella in cui il focus non si sposta affatto: lì non c'è niente da interpretare, Tab viene premuto e il focus resta dov'era.
+The other kind of trap is still asserted: the one where focus does not move at all. There is nothing to interpret there — Tab is pressed and focus stays where it was.
 
-Il limite del metodo va detto: osserva fatti meccanici, non usabilità. Sa dire che un elemento riceve il focus, non che l'indicatore sia percepibile; sa dire che nessun elemento è irraggiungibile, non che il percorso di acquisto si completi. Sposta questi criteri da "non verificabile" a "parzialmente verificato".
+The limits of the method should be stated: it observes mechanical facts, not usability. It can tell that an element receives focus, not that the indicator is perceivable; that no element is unreachable, not that a checkout can be completed. It moves these criteria from "not verifiable" to "partially verified".
 
-## Reflow, zoom e spaziatura
+## Reflow, zoom and text spacing
 
-Altre tre prove che axe non può fare, perché richiedono di ridimensionare la finestra e di modificare gli stili.
+Three more tests axe cannot run, because they require resizing the window and changing styles.
 
-La finestra viene portata a 320 px di larghezza — l'equivalente di uno zoom al 400% — e si misura se compare scorrimento orizzontale, risalendo agli elementi che lo causano. Tabelle, immagini e blocchi preformattati finiscono in una voce separata: le WCAG ammettono l'eccezione per i contenuti che richiedono davvero una disposizione bidimensionale, quindi vanno valutati invece che accusati.
+The window is set to 320 px wide — the equivalent of 400% zoom — and Conforme measures whether horizontal scrolling appears, tracing it back to the elements that cause it. Tables, images and preformatted blocks go into a separate entry: WCAG allows an exception for content that genuinely needs a two-dimensional layout, so they are reviewed rather than accused.
 
-Poi viene applicata la spaziatura prevista dal criterio 1.4.12 — interlinea 1.5, spazio fra paragrafi 2em, fra lettere 0.12em, fra parole 0.16em — e si guarda quali contenitori iniziano a tagliare il testo. Gli elementi già tagliati prima non vengono attribuiti alla spaziatura: sono un altro problema.
+Then the spacing from criterion 1.4.12 is applied — line height 1.5, paragraph spacing 2em, letter spacing 0.12em, word spacing 0.16em — and Conforme looks at which containers start clipping text. Elements that were clipped before are not attributed to spacing: that is a different problem.
 
-Anche qui il limite è dichiarato: si misura se il contenuto scorre o viene tagliato, non se il layout ricalcolato resti comprensibile. Una pagina può non produrre scorrimento orizzontale e avere comunque il menu che copre il contenuto.
+The limit is stated here too: it measures whether content scrolls or gets clipped, not whether the reflowed layout still makes sense. A page can have no horizontal scrolling and still have its menu covering the content.
 
-## Gli altri controlli
+## The other checks
 
-Diversi criteri dipendono da come la pagina si comporta, non da come è scritta, e dal DOM non si vedono. Conforme li ricava osservando il documento e provando interazioni leggere.
+Several criteria depend on how the page behaves, not on how it is written, and cannot be seen in the DOM. Conforme derives them by observing the document and trying light interactions.
 
-Prima del caricamento viene sostituito `addEventListener`, così resta traccia di quali eventi la pagina ascolta: è l'unico modo per sapere che esistono scorciatoie da tastiera globali, azioni legate alla pressione invece che al rilascio, o funzioni attivate scuotendo il dispositivo. Gli attributi non ne conservano memoria e `getEventListeners` esiste solo negli strumenti di sviluppo.
+Before the page loads, `addEventListener` is replaced so that there is a record of which events the page listens for. It is the only way to know that there are global keyboard shortcuts, actions that fire on press instead of release, or features triggered by shaking the device: attributes keep no trace of them, and `getEventListeners` only exists in developer tools.
 
-Dal documento si leggono poi gli audio che partono da soli, le animazioni senza fine prive di un comando di pausa, il blocco dell'orientamento nei fogli di stile, i media senza sottotitoli né trascrizione, e le vie disponibili per raggiungere le pagine.
+The document is then read for audio that starts on its own, endless animations with no pause control, orientation locks in stylesheets, media without captions or transcripts, and the ways available to reach pages.
 
-Due prove richiedono di agire: si dà il focus a ogni campo e se ne cambia il valore, per vedere se la pagina naviga o invia da sola. I tentativi vengono intercettati e annullati, e i moduli che sembrano fare cose serie — pagamenti, cancellazioni — non vengono toccati affatto.
+Two tests require acting: each field is focused and its value changed, to see whether the page navigates or submits on its own. The attempts are intercepted and cancelled, and forms that look like they do serious things — payments, deletions — are not touched at all.
 
-Infine si confronta l'ordine del codice con la posizione a schermo dentro i contenitori flex e grid, che è il meccanismo con cui il CSS riordina davvero i blocchi.
+Finally, source order is compared with on-screen position inside flex and grid containers, which is how CSS actually reorders blocks.
 
-## Chi deve correggere
+## Who has to fix it
 
-Un report che dice "il tuo sito ha tredici problemi" mette sullo stesso piano cose che si sistemano in modi diversissimi. Su comune.milano.it quattro segnalazioni su tredici non nascono dal codice del Comune: vengono dal gestore del consenso ai cookie e da un modulo incorporato da un fornitore esterno. Chi riceve quel report non può aprire un editor e sistemarle.
+A report that says "your site has thirteen problems" puts on the same level things that get fixed in very different ways. On comune.milano.it four findings out of thirteen do not come from the city's own code: they come from the cookie consent manager and from a form embedded from an external provider. Whoever receives that report cannot open an editor and fix them.
 
-Conforme distingue le due cose, con due livelli di certezza che tiene separati perché non valgono uguale. Un elemento dentro un iframe servito da un altro dominio è un fatto, e si legge dall'indirizzo. Un componente riconosciuto dai nomi che lascia nelle classi — OneTrust, Iubenda, reCAPTCHA, una ventina in tutto — è un'ipotesi molto probabile, e il report lo dichiara come tale. L'elenco dei componenti conosciuti non sarà mai completo: quello che non viene riconosciuto è attribuito al sito, perché è meglio attribuire al sito qualcosa di terzi che assolverlo da qualcosa di suo.
+Conforme tells the two apart, with two levels of certainty kept separate because they are not worth the same. An element inside an iframe served from another domain is a fact, readable from the address. A component recognised by the names it leaves in class attributes — OneTrust, Iubenda, reCAPTCHA, about twenty in all — is a very likely hypothesis, and the report says so. The list of known components will never be complete: anything not recognised is attributed to the site, because it is better to blame the site for a third party's problem than to clear it of one of its own.
 
-L'attribuzione non è una scusante, e il report lo dice. Per i soggetti della Legge Stanca la direttiva (UE) 2016/2102 esclude i contenuti di terzi all'articolo 1, paragrafo 4, lettera e), ma a tre condizioni che devono valere tutte insieme: non finanziati, non sviluppati e non sottoposti al controllo del soggetto obbligato. Un banner dei cookie scelto, pagato e configurato è sotto il controllo di chi lo ha messo. Per i soggetti dell'European Accessibility Act non risulta un'esclusione analoga.
+Attribution is not an excuse, and the report says so. For organisations under the Legge Stanca, Directive (EU) 2016/2102 excludes third-party content in Article 1(4)(e), but only under three conditions that must all hold: the content is neither funded, nor developed, nor under the control of the obliged body. A cookie banner that was chosen, paid for and configured is under the control of whoever put it there. For organisations under the European Accessibility Act no equivalent exclusion appears to exist.
 
-## Cosa è accertato e cosa va guardato
+## Asserted versus to review
 
-Alcuni di questi controlli trovano fatti certi: un `autoplay` senza `muted` è una violazione, non un'opinione. Altri trovano indizi che il codice non basta a giudicare — una tabella larga può essere un'eccezione legittima, una scorciatoia può già usare un modificatore, un gestore su `mousedown` può servire solo a preparare un trascinamento.
+Some of these checks find facts: an `autoplay` without `muted` is a violation, not an opinion. Others find clues that the code alone cannot judge — a wide table may be a legitimate exception, a shortcut may already use a modifier key, a `mousedown` handler may only be preparing a drag.
 
-I secondi non compaiono fra i problemi. Finiscono in una sezione separata insieme ai controlli che axe non ha saputo risolvere, e non vengono conteggiati. Presentarli come colpe, per giunta etichettati "grave", farebbe perdere fiducia nel resto del report.
+The latter are not listed as problems. They go into a separate section, together with the checks axe could not resolve, and are not counted. Presenting them as faults, labelled "serious" to boot, would cost the rest of the report its credibility.
 
-## Quanto copre
+## Coverage
 
-Dei 50 criteri WCAG 2.1 di livello A e AA, l'analisi automatica ne verifica pienamente 4, ne intercetta parzialmente 33 e sui restanti 13 non è in grado di pronunciarsi.
+Of the 50 WCAG 2.1 level A and AA success criteria, automated analysis fully verifies 4, partially catches 33, and cannot say anything about the remaining 13.
 
-I tredici che restano fuori sono quelli che richiedono di capire, non di misurare: la qualità delle audiodescrizioni, le istruzioni che si affidano a forma e posizione, il testo dentro le immagini, il lampeggio, la coerenza fra pagine diverse, e il giudizio sui messaggi di errore.
+The thirteen left out are those that require understanding rather than measuring: the quality of audio descriptions, instructions that rely on shape and position, text inside images, flashing, consistency across pages, and judgement on error messages.
 
-Un report privo di errori non attesta quindi la conformità, e il report stesso lo dichiara in apertura. Insieme ai problemi rilevati viene sempre prodotta la checklist delle 14 verifiche manuali che coprono i criteri restanti, con i tempi stimati.
+So a report without errors does not certify conformance, and the report says so at the top. Alongside the problems found it always produces a checklist of 14 manual checks covering the remaining criteria, with time estimates.
 
-I numeri sono calcolati dal codice: ogni criterio dichiara se sia automatizzabile, e il totale si aggiorna da sé.
+The numbers are computed by the code: each criterion declares whether it can be automated, and the totals update themselves.
 
-## Gli obblighi in Italia sono due
+## Two different obligations in Italy
 
-Vengono confusi di frequente, anche da chi vende consulenza, e la distinzione determina che cosa occorre fare.
+They are often confused, even by people selling consulting, and the difference decides what has to be done.
 
-**Legge Stanca** (L. 4/2004, estesa dal D.L. 76/2020) riguarda le pubbliche amministrazioni, le società a controllo pubblico e i soggetti privati con fatturato medio superiore a 500 milioni di euro. La dichiarazione di accessibilità è valida soltanto se compilata su form.agid.gov.it, va aggiornata entro il 23 settembre di ogni anno e nessun documento prodotto da uno strumento esterno può sostituirla.
+**Legge Stanca** (Law 4/2004, extended by Decree-Law 76/2020) covers public administrations, publicly controlled companies and private organisations with average turnover above €500 million. The accessibility statement is only valid if filled in on form.agid.gov.it — the form run by AgID, the Italian digital agency. It must be updated by 23 September every year, and no document produced by an external tool can replace it.
 
-**European Accessibility Act** (Dir. UE 2019/882, D.Lgs. 82/2022) riguarda le imprese che superano la soglia di microimpresa, a partire dal 28 giugno 2025. Le informazioni sull'accessibilità sono obbligatorie, ma il formato AgID non lo è.
+**European Accessibility Act** (Directive (EU) 2019/882, Legislative Decree 82/2022) covers businesses above the micro-enterprise threshold, from 28 June 2025. Accessibility information is mandatory, but the AgID format is not.
 
-Per questa ragione il file generato si chiama scheda preparatoria: nel primo caso serve a raccogliere i dati da riportare nel modulo AgID, nel secondo può diventare la base del documento da pubblicare.
+That is why the generated file is a preparatory worksheet (`scheda-dichiarazione.md`) and not a statement: in the first case it collects the data to copy into the AgID form, in the second it can become the basis of the document to publish.
 
-## Uso
-
-```bash
-npm start -- esempio.it                          # lo schema si può omettere
-npm start -- esempio.it esempio.it/contatti      # più pagine
-npm start -- --file urls.txt --out cartella-mia  # cartella scelta da te
-npm start -- localhost:3000                      # in sviluppo, usa http
-npm start -- esempio.it --json                   # anche i dati grezzi
-```
-
-Restituisce exit code 1 in presenza di problemi bloccanti o di pagine irraggiungibili, così da bloccare le regressioni in integrazione continua.
-
-Se nel sistema è già presente Chrome o Chromium, si può evitare il download di Playwright:
+## Usage
 
 ```bash
-export CONFORME_BROWSER_PATH=/percorso/del/chromium
+npm start -- example.it                          # the scheme can be omitted
+npm start -- example.it example.it/contacts      # several pages
+npm start -- --file urls.txt --out my-folder     # a folder of your choice
+npm start -- localhost:3000                      # in development, uses http
+npm start -- example.it --json                   # raw data as well
 ```
 
-## Priorità
+Exits with code 1 when there are blocking problems or unreachable pages, so that regressions can fail a CI build.
 
-1. impedisce di usare il sito
-2. ostacolo serio
-3. rallenta senza impedire
+If Chrome or Chromium is already installed, Playwright's download can be skipped:
 
-Un contrasto insufficiente e un modulo non compilabile da tastiera hanno entrambi severità `serious` per axe. Per chi usa il sito non sono la stessa cosa.
+```bash
+export CONFORME_BROWSER_PATH=/path/to/chromium
+```
 
-## Pagine che non sono il sito
+## Priority
 
-Un errore 403, una schermata anti-bot o una pagina di manutenzione restituiscono comunque una pagina, che uno scanner ingenuo analizza come se fosse il sito richiesto.
+1. prevents use of the site
+2. serious obstacle
+3. slows down without preventing
 
-È accaduto scansionando agid.gov.it: il server ha risposto con una pagina di errore CloudFront e il report ha attribuito ad AgID un `lang` mancante che apparteneva ad Amazon. Ora le risposte 4xx e 5xx vengono scartate e le schermate intermedie segnalate.
+Insufficient contrast and a form that cannot be completed by keyboard both have `serious` severity in axe. For the person using the site they are not the same thing.
 
-Per la stessa ragione il report indica quanti controlli sono stati superati: una pagina reale ne supera venti o trenta, una schermata di errore quattro. Senza quel dato, "zero violazioni" e "lo scanner non ha caricato nulla" si leggono allo stesso modo.
+## Pages that are not the site
 
-## Controlli non risolti
+A 403 error, an anti-bot screen or a maintenance page still return a page, which a naive scanner analyses as if it were the site requested.
 
-axe restituisce anche i controlli che non è riuscito a risolvere, quasi sempre il contrasto su sfondi con immagini o gradienti, dove il colore dietro al testo non è calcolabile. Vengono raccolti in una sezione separata e non conteggiati fra i problemi.
+It happened while scanning agid.gov.it: the server answered with a CloudFront error page, and the report blamed AgID for a missing `lang` attribute that belonged to Amazon. Now 4xx and 5xx responses are discarded and intermediate screens are flagged.
 
-## Come libreria
+For the same reason the report states how many checks passed: a real page passes twenty or thirty, an error screen four. Without that figure, "zero violations" and "the scanner loaded nothing" read the same.
+
+## Unresolved checks
+
+axe also returns the checks it could not resolve — almost always contrast over images or gradients, where the colour behind the text cannot be computed. They are collected in a separate section and not counted as problems.
+
+## As a library
+
+Function names are in Italian, like the rest of the code.
 
 ```js
 import { scansiona, reportMarkdown } from 'conforme';
 
-const esito = await scansiona(['https://esempio.it']);
+const esito = await scansiona(['https://example.it']);
 console.log(reportMarkdown(esito));
 ```
 
-Mappatura, aggregazione e report non dipendono dal browser, quindi è possibile passare risultati raccolti altrove.
+Mapping, aggregation and reporting do not depend on the browser, so results collected elsewhere can be passed in.
 
 ```js
 import { riepiloga, normalizzaViolazioni } from 'conforme';
@@ -179,73 +183,75 @@ const pagine = [{ url, errore: null, violazioni: normalizzaViolazioni(risultatiA
 const esito = { dataScansione: new Date().toISOString(), pagine, riepilogo: riepiloga(pagine) };
 ```
 
-## File
+## Files
 
 ```
-src/wcag-it.js       i 50 criteri: titolo ufficiale, impatto, correzione, automatizzabilità
-src/regole-it.js     le regole axe, con descrizione e correzione specifica
-src/tastiera.js      la prova da tastiera, pilotando il browser
-src/reflow.js        reflow a 320 px, testo al 200%, spaziatura
-src/ascoltatori.js   registra quali eventi la pagina ascolta
-src/media.js         audio, animazioni, orientamento, movimento
-src/interazione.js   puntatore, scorciatoie, cambi di contesto
-src/struttura.js     ordine di lettura, vie di navigazione
-src/manuale.js       le 14 verifiche manuali, collegate ai criteri che coprono
-src/dichiarazione.js scheda preparatoria e distinzione fra i due regimi
-src/argomenti.js     argomenti da riga di comando
-src/testo.js         accordo del plurale nei documenti generati
-src/origine.js       attribuisce ogni segnalazione al sito o a un componente esterno
-src/aggrega.js       aggregazione dei risultati
+src/wcag-it.js       the 50 criteria: official title, impact, fix, whether automatable
+src/regole-it.js     axe rules, each with its own description and fix
+src/tastiera.js      the keyboard test, driving the browser
+src/reflow.js        reflow at 320 px, text at 200%, text spacing
+src/ascoltatori.js   records which events the page listens for
+src/media.js         audio, animation, orientation, device motion
+src/interazione.js   pointer, shortcuts, changes of context
+src/struttura.js     reading order, ways of navigating
+src/manuale.js       the 14 manual checks, linked to the criteria they cover
+src/dichiarazione.js preparatory worksheet and the distinction between the two laws
+src/argomenti.js     command-line arguments
+src/testo.js         plural agreement in generated documents
+src/origine.js       attributes each finding to the site or to an external component
+src/aggrega.js       aggregation of results
 src/scan.js          Playwright + axe-core
-src/report.js        Markdown e JSON
+src/report.js        Markdown and JSON
 src/cli.js           entry point
 ```
 
-I moduli che pilotano il browser sono `scan.js`, `tastiera.js`, `reflow.js`, `media.js`, `interazione.js`, `struttura.js`, `ascoltatori.js` e `cli.js`. Il resto funziona senza browser, e un test lo verifica.
+The modules that drive the browser are `scan.js`, `tastiera.js`, `reflow.js`, `media.js`, `interazione.js`, `struttura.js`, `ascoltatori.js` and `cli.js`. Everything else runs without a browser, and a test checks that it does.
 
-## Test
+## Tests
 
 ```bash
 npm test
 ```
 
-120 test, senza dipendenze: funzionano anche prima di `npm install`. Oltre al funzionamento verificano il contenuto: che i titoli corrispondano alla traduzione ufficiale W3C, che il criterio 3.1.2 sia classificato come AA (le fonti secondarie sbagliano di frequente), che due regole dello stesso criterio non ricevano la medesima indicazione, che la scheda non si presenti mai come una dichiarazione valida.
+121 tests, no dependencies: they run even before `npm install`. Beyond behaviour they check content: that criterion titles match the official W3C Italian translation, that criterion 3.1.2 is classified AA (secondary sources often get it wrong), that two rules under the same criterion never get the same advice, that the worksheet never presents itself as a valid statement.
 
 ```bash
 npm run test:browser
 ```
 
-I controlli che pilotano il browser, su pagine costruite apposta: un banner che trattiene il focus senza via d'uscita, uno che si chiude con Esc, una pagina corretta, una con finti comandi, una in cui il percorso si interrompe senza causa identificabile, una che riprende il focus dal documento senza essere una trappola, una con componenti di terze parti. Richiedono Chromium, e per questo stanno a parte.
+The checks that drive the browser, on pages built for the purpose: a banner that holds focus with no way out, one that closes with Esc, a correct page, one with fake controls, one where the walk stops for no identifiable reason, one that takes focus back from the document without being a trap, and one with third-party components. They need Chromium, which is why they are kept separate. Both suites run on GitHub on every push.
 
-Le pagine vengono servite via HTTP su due porte, non aperte da disco: l'attribuzione a terze parti confronta le origini, e con `file://` l'origine è opaca — un test così direbbe sempre "stessa origine" e passerebbe anche a codice sbagliato.
+The pages are served over HTTP on two ports rather than opened from disk: third-party attribution compares origins, and a `file://` origin is opaque — a test like that would always see "same origin" and pass even with broken code.
 
-Ogni controllo ha una pagina che lo fa scattare e una che non deve farlo scattare. La seconda conta più della prima: è quella che smaschera le accuse false, ed è l'unica che distingue un controllo corretto da un controllo spento.
+Every check has a page that should trigger it and one that must not. The second matters more: it is the one that exposes false accusations, and the only one that tells a working check from a switched-off one.
 
-## Provenienza dei contenuti
+## Where the content comes from
 
-I titoli dei criteri sono ripresi dalla [traduzione ufficiale W3C](https://www.w3.org/Translations/WCAG21-it/) e non vanno riscritti: sono i nomi con cui i criteri compaiono negli atti.
+Criterion titles are taken from the [official W3C Italian translation](https://www.w3.org/Translations/WCAG21-it/) and must not be rewritten: they are the names under which the criteria appear in official documents.
 
-I testi di impatto e correzione sono redazione dell'autore. Non costituiscono testo normativo e non vanno citati come tale.
+The impact and fix texts are the author's own writing. They are not normative text and should not be quoted as such.
 
-Il quadro normativo è tratto dalle fonti AgID; ha valore orientativo e non costituisce consulenza legale.
+The legal framework is drawn from AgID sources. It is for guidance only and is not legal advice.
 
-## Contribuire
+## Contributing
 
-In ordine di utilità:
+In order of usefulness:
 
-1. Verifiche con screen reader che smentiscano il report. Se lo strumento considera pulito un sito che NVDA rivela inagibile, è la segnalazione più preziosa.
-2. Siti italiani sui quali lo scanner sbaglia o si interrompe.
-3. Correzioni ai testi, in particolare da chi si occupa di accessibilità per mestiere.
-4. Regole axe non ancora tradotte.
+1. Screen reader checks that contradict the report. If the tool calls a site clean and NVDA shows it is unusable, that is the most valuable report there is.
+2. Italian sites where the scanner gets things wrong or breaks.
+3. Corrections to the texts, especially from people who do accessibility for a living.
+4. axe rules not yet translated.
 
-Le segnalazioni di errori normativi hanno la precedenza su tutto il resto.
+Reports of legal errors take priority over everything else.
 
-## Licenza
+Issues and pull requests are welcome in English or Italian.
+
+## License
 
 Apache 2.0.
 
-axe-core e @axe-core/playwright sono distribuiti con licenza MPL-2.0, copyleft a livello di file: usarli come dipendenze non vincola questo codice, modificarne i file sì. Playwright è distribuito con licenza Apache 2.0.
+axe-core and @axe-core/playwright are distributed under MPL-2.0, which is copyleft at file level: using them as dependencies does not bind this code, modifying their files does. Playwright is distributed under Apache 2.0.
 
-## Avvertenza
+## Disclaimer
 
-Strumento di supporto tecnico. Non sostituisce una valutazione professionale di accessibilità e non costituisce consulenza legale. Il perimetro di applicazione delle norme va verificato caso per caso.
+A technical support tool. It does not replace a professional accessibility evaluation and is not legal advice. Whether the laws apply has to be checked case by case.

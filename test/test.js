@@ -1370,4 +1370,35 @@ test('nessun documento generato contiene "pagina/e" e simili', () => {
   }
 });
 
+// ══════════════════════════════════════════ README in due lingue
+
+console.log('\nLe due versioni del README dicono la stessa cosa');
+
+test('i due README hanno la stessa struttura e gli stessi numeri', () => {
+  // Un README bilingue si guasta sempre allo stesso modo: si aggiorna una
+  // versione e l'altra resta indietro. Questo test non verifica la
+  // traduzione, verifica che le due versioni non divergano.
+  const en = fs.readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+  const it = fs.readFileSync(new URL('../README.it.md', import.meta.url), 'utf8');
+
+  // Ciascuna rimanda all'altra.
+  assert.match(en, /\[Italiano\]\(README\.it\.md\)/, 'README.md non rimanda alla versione italiana');
+  assert.match(it, /\[English\]\(README\.md\)/, 'README.it.md non rimanda alla versione inglese');
+
+  const conta = (testo, re) => (testo.match(re) || []).length;
+  assert.equal(conta(en, /^## /gm), conta(it, /^## /gm), 'numero di sezioni diverso');
+  assert.equal(conta(en, /^### /gm), conta(it, /^### /gm), 'numero di sottosezioni diverso');
+  assert.equal(conta(en, /^```/gm), conta(it, /^```/gm), 'numero di blocchi di codice diverso');
+
+  // Il numero dei test e quello della copertura devono coincidere fra le
+  // due versioni, e la copertura deve coincidere con i dati.
+  const testEn = en.match(/(\d+) tests, no dependencies/)?.[1];
+  const testIt = it.match(/(\d+) test, senza dipendenze/)?.[1];
+  assert.ok(testEn && testIt, 'numero dei test non trovato');
+  assert.equal(testEn, testIt, 'i due README dichiarano un numero di test diverso');
+
+  assert.match(en, new RegExp(`fully verifies ${COPERTURA.automatici}, partially catches ${COPERTURA.parziali}, and cannot say anything about the remaining ${COPERTURA.manuali}`));
+  assert.match(it, new RegExp(`ne verifica pienamente ${COPERTURA.automatici}, ne intercetta parzialmente ${COPERTURA.parziali} e sui restanti ${COPERTURA.manuali}`));
+});
+
 console.log(`\n${passati} test superati${process.exitCode ? ' — CI SONO ERRORI' : ''}\n`);
